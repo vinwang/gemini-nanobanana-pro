@@ -147,7 +147,7 @@ export default function EnhancedNanoPage() {
           showError('积分不足', '您的积分已用完，请购买积分继续使用')
           return
         }
-        const errorMsg = `生成失败：${data.error || '未知错误'}。模型：${model === 'doubao' ? '豆包模型(待开发)' : 'Gemini 2.5 Flash'}`
+        const errorMsg = `生成失败：${data.error || '未知错误'}`
         showError('生成失败', errorMsg)
         return
       } else {
@@ -160,14 +160,14 @@ export default function EnhancedNanoPage() {
       console.error('请求错误:', err)
       if (err instanceof Error) {
         if (err.message.includes('fetch')) {
-          showError('网络错误', `网络连接失败，请检查网络后重试。模型：${model === 'doubao' ? '豆包模型(待开发)' : 'Gemini 2.5 Flash'}`)
+          showError('网络错误', '网络连接失败，请检查网络后重试')
         } else if (err.message.includes('timeout')) {
-          showError('请求超时', `请求超时，请稍后重试。模型：${model === 'doubao' ? '豆包模型(待开发)' : 'Gemini 2.5 Flash'}`)
+          showError('请求超时', '请求超时，请稍后重试')
         } else {
-          showError('发生错误', `发生错误：${err.message}。模型：${model === 'doubao' ? '豆包模型(待开发)' : 'Gemini 2.5 Flash'}`)
+          showError('发生错误', `发生错误：${err.message}`)
         }
       } else {
-        showError('未知错误', `未知错误，请重试。模型：${model === 'doubao' ? '豆包模型(待开发)' : 'Gemini 2.5 Flash'}`)
+        showError('未知错误', '未知错误，请重试')
       }
     } finally {
       setLoading(false)

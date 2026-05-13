@@ -465,7 +465,7 @@ export default function NanoPage() {
         data = await response.json()
       } catch (parseError) {
         console.error('JSON解析错误:', parseError)
-        showError('API解析错误', `API响应解析失败，请稍后重试。使用的模型：${getModelDisplayName(model)}`)
+        showError('API解析错误', 'API响应解析失败，请稍后重试')
         return
       }
 
@@ -489,15 +489,15 @@ export default function NanoPage() {
         }
 
         if (response.status === 524) {
-          const errorMsg = `服务器响应超时，请稍后重试。模型：${getModelDisplayName(model)}`
+          const errorMsg = '服务器响应超时，请稍后重试'
           showError('服务器超时', errorMsg)
           return
         } else if (response.status === 500) {
-          const errorMsg = `服务器内部错误：${data.error || '未知错误'}。模型：${getModelDisplayName(model)}`
+          const errorMsg = `服务器内部错误：${data.error || '未知错误'}`
           showError('服务器错误', errorMsg)
           return
         }
-        const errorMsg = `生成失败：${data.error || '未知错误'}。模型：${getModelDisplayName(model)}`
+        const errorMsg = `生成失败：${data.error || '未知错误'}`
         showError('生成失败', errorMsg)
         return
       } else {
@@ -507,14 +507,14 @@ export default function NanoPage() {
       console.error('请求错误:', err)
       if (err instanceof Error) {
         if (err.message.includes('fetch')) {
-          showError('网络错误', `网络连接失败，请检查网络后重试。模型：${getModelDisplayName(model)}`)
+          showError('网络错误', '网络连接失败，请检查网络后重试')
         } else if (err.message.includes('timeout')) {
-          showError('请求超时', `请求超时，请稍后重试。模型：${getModelDisplayName(model)}`)
+          showError('请求超时', '请求超时，请稍后重试')
         } else {
-          showError('发生错误', `发生错误：${err.message}。模型：${getModelDisplayName(model)}`)
+          showError('发生错误', `发生错误：${err.message}`)
         }
       } else {
-        showError('未知错误', `未知错误，请重试。模型：${getModelDisplayName(model)}`)
+        showError('未知错误', '未知错误，请重试')
       }
     } finally {
       setLoading(false)

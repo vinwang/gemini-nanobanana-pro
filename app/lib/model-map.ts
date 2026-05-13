@@ -10,8 +10,8 @@ const PROVIDER_MODEL_MAP: Readonly<Record<DefaultProvider, Readonly<Record<AppMo
   },
   grsai: {
     'gemini-3-pro-image-preview': 'nano-banana-pro',
-    'gemini': 'nano-banana-fast',
-    'gemini-2.5-flash-image': 'nano-banana-fast'
+    'gemini': 'nano-banana-2',
+    'gemini-2.5-flash-image': 'nano-banana-2'
   }
 }
 
