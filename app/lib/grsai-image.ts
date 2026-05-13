@@ -1,6 +1,13 @@
 import { getDefaultProvider } from '@/app/lib/provider-config'
 
 export type UpstreamJsonRequest = {
+  body: string
+  headers: Record<string, string>
+  method: string
+  url: string
+}
+
+export type UpstreamRequest = {
   body?: string
   headers: Record<string, string>
   method: string
@@ -78,7 +85,7 @@ export function buildGrsaiImageRequest(options: GrsaiGenerateOptions): UpstreamJ
  * @param options Grsai 查询请求配置
  * @returns 可传给 fetch 的上游查询请求对象
  */
-export function buildGrsaiResultRequest(options: GrsaiResultOptions): UpstreamJsonRequest {
+export function buildGrsaiResultRequest(options: GrsaiResultOptions): UpstreamRequest {
   const resultUrl = new URL(`${options.apiUrl}${GRS_AI_RESULT_PATH}`)
   resultUrl.searchParams.set('id', options.taskId)
 

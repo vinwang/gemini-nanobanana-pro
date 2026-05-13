@@ -6,6 +6,7 @@ import {
 } from '@/app/lib/api-error'
 import {
   buildGrsaiImageRequest,
+  getGrsaiResponseStatus,
   parseGrsaiImageResponse,
   shouldUseGrsaiImageProtocol
 } from '@/app/lib/grsai-image'
@@ -72,14 +73,20 @@ async function openAiImageHandler(request: NextRequest) {
       )
     }
 
-    const parsed = shouldUseGrsaiImageProtocol(apiUrl)
-      ? parseGrsaiImageResponse(payload)
-      : parseOpenAiImageResponse(payload)
+    if (shouldUseGrsaiImageProtocol(apiUrl)) {
+      const parsed = parseGrsaiImageResponse(payload)
+      return NextResponse.json({
+        ...parsed,
+        model
+      }, { status: getGrsaiResponseStatus(parsed) })
+    }
+
+    const parsed = parseOpenAiImageResponse(payload)
     return NextResponse.json({
       ...parsed,
       success: true,
       model
-    })
+    }, { status: 200 })
   } catch (error) {
     console.error('OpenAI 图片处理错误:', error)
     return NextResponse.json(

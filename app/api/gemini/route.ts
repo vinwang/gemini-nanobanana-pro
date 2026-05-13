@@ -6,6 +6,7 @@ import {
 } from '@/app/lib/api-error'
 import {
   buildGrsaiImageRequest,
+  getGrsaiResponseStatus,
   parseGrsaiImageResponse,
   shouldUseGrsaiImageProtocol
 } from '@/app/lib/grsai-image'
@@ -171,7 +172,8 @@ async function geminiHandler(request: NextRequest) {
     const data = await response.json()
 
     if (shouldUseGrsaiImageProtocol(apiUrl)) {
-      return NextResponse.json(parseGrsaiImageResponse(data))
+      const parsed = parseGrsaiImageResponse(data)
+      return NextResponse.json(parsed, { status: getGrsaiResponseStatus(parsed) })
     }
     
     // 根据请求类型解析不同格式的响应

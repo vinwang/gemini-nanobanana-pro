@@ -12,6 +12,18 @@ type Mode = 'upload' | 'text'
 type Style = 'none' | 'enhance' | 'artistic' | 'anime' | 'photo'
 type Model = 'gemini-3-pro-image-preview' | 'gemini' | 'openai' | 'doubao'
 
+const GRS_AI_POLL_INTERVAL_MS = 2500
+
+type GenerationRequestData = {
+  apiKey?: string
+  apiUrl?: string
+  [key: string]: unknown
+}
+
+type GrsaiPendingTask = {
+  taskId: string
+}
+
 export default function NanoPage() {
   const { language, setLanguage, t } = useLanguage()
   const [mode, setMode] = useState<Mode>('text')
@@ -291,6 +303,67 @@ export default function NanoPage() {
     setShowErrorModal(true)
   }
 
+  /**
+   * 判断响应是否为 Grsai 异步任务
+   * @param data API 响应数据
+   * @returns 是否需要继续轮询任务结果
+   */
+  const isPendingGrsaiTask = (data: unknown): data is GrsaiPendingTask => {
+    if (!data || typeof data !== 'object') {
+      return false
+    }
+
+    const task = data as { imageUrl?: unknown; taskId?: unknown }
+    return typeof task.taskId === 'string' && task.taskId.length > 0 && !task.imageUrl
+  }
+
+  /**
+   * 等待指定毫秒数
+   * @param delayMs 等待时长
+   * @returns 等待完成的 Promise
+   */
+  const wait = (delayMs: number): Promise<void> => {
+    return new Promise((resolve) => {
+      window.setTimeout(resolve, delayMs)
+    })
+  }
+
+  /**
+   * 轮询 Grsai 异步图片任务
+   * @param taskId Grsai 生成任务 ID
+   * @param requestData 原始请求配置，用于沿用页面 API 设置
+   * @returns 最终生成结果
+   */
+  const pollGrsaiTask = async (
+    taskId: string,
+    requestData: GenerationRequestData
+  ): Promise<unknown> => {
+    while (true) {
+      await wait(GRS_AI_POLL_INTERVAL_MS)
+
+      const response = await fetch('/api/grsai-result', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          taskId,
+          apiKey: requestData.apiKey,
+          apiUrl: requestData.apiUrl
+        })
+      })
+      const data = await response.json()
+
+      if (isPendingGrsaiTask(data)) {
+        continue
+      }
+
+      if (!response.ok) {
+        throw new Error(typeof data.error === 'string' ? data.error : '生成失败，请稍后重试')
+      }
+
+      return data
+    }
+  }
+
   const handleGenerate = async () => {
     if (mode === 'text' && prompt.length < 3) {
       showError('输入提示', '请输入至少3个字符的描述')
@@ -343,7 +416,7 @@ export default function NanoPage() {
         : { prompt: finalPrompt, imageDataArray }
 
       // 添加用户标识到请求
-      const requestData: any = {
+      const requestData: GenerationRequestData = {
         ...requestBody
       }
 
@@ -393,6 +466,12 @@ export default function NanoPage() {
       } catch (parseError) {
         console.error('JSON解析错误:', parseError)
         showError('API解析错误', `API响应解析失败，请稍后重试。使用的模型：${getModelDisplayName(model)}`)
+        return
+      }
+
+      if (isPendingGrsaiTask(data)) {
+        const finalData = await pollGrsaiTask(data.taskId, requestData)
+        setResult(finalData)
         return
       }
 
