@@ -33,8 +33,8 @@
 - Node.js 18+
 - AI 模型 API 密钥：
   - **Gemini API 密钥**：从 [Google AI Studio](https://aistudio.google.com/app/apikey) 获取
-  - **OpenAI API 密钥**：从 Chatfire 或 OpenAI 兼容平台获取
-  - **Doubao API 密钥**：从 Chatfire 或兼容平台获取
+  - **OpenAI API 密钥**：从当前接入的图片服务商获取
+  - **Doubao API 密钥**：从当前接入的图片服务商获取
 
 ### 安装步骤
 
@@ -53,26 +53,24 @@
    ```bash
    cp .env.example .env.local
    ```
-   编辑 `.env.local` 并填入你的 API 密钥：
+   如果默认使用 Grsai，推荐最简配置如下：
    ```env
-   GEMINI_API_KEY=你的_gemini_api_key
-   GEMINI_MODEL=gemini-2.5-flash-image
-   MAYNOR_API_KEY=你的_chatfire_api_key
-   MAYNOR_API_URL=https://api.chatfire.site
+   DEFAULT_IMAGE_PROVIDER=grsai
+   IMAGE_API_KEY=你的_grsai_key
+   IMAGE_API_URL=https://grsaiapi.com
+   IMAGE_MODEL=nano-banana
    MAYNOR_API_PROTOCOL=standard
-
-   OPENAI_API_KEY=你的_chatfire_api_key
-   OPENAI_API_URL=https://api.chatfire.site
-   OPENAI_IMAGE_MODEL=gpt-image-2
    ```
 
    注意：
-   - 当前默认统一使用 `https://api.chatfire.site`
+   - `DEFAULT_IMAGE_PROVIDER` 用于切换默认供应商，当前支持 `grsai` 与 `chatfire`
+   - 当 `DEFAULT_IMAGE_PROVIDER=grsai` 时，图片路由会优先读取 `IMAGE_API_KEY`、`IMAGE_API_URL`、`IMAGE_MODEL`
+   - `MAYNOR_API_URL` / `OPENAI_API_URL` 不填时，会自动回退到默认供应商地址
    - `OPENAI_API_URL` 填基础地址，不要带 `/v1`
    - 项目会自动请求 `/v1/images/generations` 和 `/v1/images/edits`
    - 页面中的 OpenAI `API URL` 留空时，后端优先使用 `.env.local` 中的 `OPENAI_API_URL`
    - `MAYNOR_API_URL` 必须填写真实 API 基础地址，不能填写 Apifox 文档页地址
-   - 如果你填的是完整接口地址，如 `https://api.chatfire.site/v1/chat/completions`，后端会自动还原为基础地址
+   - 如果你填的是完整接口地址，如 `https://grsaiapi.com/v1/chat/completions`，后端会自动还原为基础地址
    - `MAYNOR_API_PROTOCOL=standard` 表示 MAYNOR/Gemini 路径统一走标准 `/v1/chat/completions`
 
 4. **启动开发服务器**
@@ -183,7 +181,7 @@ curl -X POST http://localhost:3000/api/openai-image \
 
 ### MAYNOR 第三方标准模型接入说明
 
-当前项目默认统一接入 `https://api.chatfire.site`。如果你准备把 `MAYNOR_API_URL` 切换到其他第三方平台，请先确认你拿到的是“真实 API 基础地址”，不是 Apifox 文档页面。
+当前项目支持通过默认 Provider 或显式 URL 扩展到不同图片服务商。如果你准备把 `MAYNOR_API_URL` 切换到其他第三方平台，请先确认你拿到的是“真实 API 基础地址”，不是 Apifox 文档页面。
 
 错误示例：
 
@@ -202,19 +200,33 @@ MAYNOR_API_PROTOCOL=standard
 GEMINI_MODEL=nano-banana
 ```
 
-以你给的 Chatfire 为例，推荐这样配置：
+以 Grsai 为例，推荐这样配置：
 
 ```env
-MAYNOR_API_KEY=你的_chatfire_key
-MAYNOR_API_URL=https://api.chatfire.site
+DEFAULT_IMAGE_PROVIDER=grsai
+IMAGE_API_KEY=你的_grsai_key
+IMAGE_API_URL=https://grsaiapi.com
+IMAGE_MODEL=nano-banana
 MAYNOR_API_PROTOCOL=standard
-GEMINI_MODEL=nano-banana
 ```
 
-如果你手里只有完整接口地址，下面这种写法现在也能工作：
+如果你要切回 Chatfire，可这样配置：
 
 ```env
-MAYNOR_API_URL=https://api.chatfire.site/v1/chat/completions
+DEFAULT_IMAGE_PROVIDER=chatfire
+MAYNOR_API_URL=https://api.chatfire.site
+```
+
+如果你切到其他家，才建议单独定义专用变量，例如：
+
+```env
+OPENAI_API_KEY=你的_openai_key
+OPENAI_API_URL=https://your-openai-compatible-host
+OPENAI_IMAGE_MODEL=gpt-image-2
+
+MAYNOR_API_KEY=你的_provider_key
+MAYNOR_API_URL=https://your-provider-host
+GEMINI_MODEL=nano-banana
 ```
 
 请求规则：
@@ -222,12 +234,18 @@ MAYNOR_API_URL=https://api.chatfire.site/v1/chat/completions
   - 文生图和图生图都走标准 `/v1/chat/completions`
   - 适合只兼容标准模型协议的第三方平台
 
-你提供的 Chatfire 示例请求体与当前 `standard` 模式兼容，模型名可通过 `GEMINI_MODEL` 指定，例如：
+标准 `/v1/chat/completions` 模式下，模型名可通过 `GEMINI_MODEL` 指定，例如：
 - `nano-banana`
 - `gemini-2.5-flash-image`
 - `gemini-2.5-flash-image-preview`
 - `nano-banana-pro`
 - `nano-banana-pro_4k`
+
+另外，项目对页面内置模型名做了 provider 级映射。例如：
+- 在 `grsai` 下，页面里的 `NanoBanana2 (Gemini 3 Pro)` 会自动映射为 `nano-banana-pro`
+- 在 `chatfire` 下，同一个页面模型名仍可映射到该服务商自己的真实模型名
+
+后续更换其他家时，只需要补充模型映射表，不需要改动生成路由。
 
 ### 示例提示词
 - "一只可爱的橘猫坐在彩虹桥上，梦幻风格，柔和光线"
@@ -270,13 +288,17 @@ gemini-nano-banana/
 
 | 变量 | 说明 | 是否必需 |
 |------|------|----------|
+| `DEFAULT_IMAGE_PROVIDER` | 默认图片服务商，支持 `grsai` / `chatfire` | 建议配置 |
+| `IMAGE_API_KEY` | 默认 Provider 的通用图片 API Key，Grsai 模式优先读取 | 使用 Grsai 时推荐配置 |
+| `IMAGE_API_URL` | 默认 Provider 的通用基础地址，Grsai 模式优先读取 | 使用 Grsai 时推荐配置 |
+| `IMAGE_MODEL` | 默认 Provider 的通用模型名，Grsai 模式优先读取 | 使用 Grsai 时推荐配置 |
 | `GEMINI_API_KEY` | Google AI Studio 的 Gemini API 密钥 | ✅ |
 | `GEMINI_MODEL` | Gemini/MAYNOR 路由使用的模型名，默认 `gemini-2.5-flash-image` | 使用第三方标准模型时建议配置 |
-| `OPENAI_API_KEY` | OpenAI/Chatfire 图片接口使用的 API 密钥 | 使用 OpenAI 时必需 |
-| `OPENAI_API_URL` | OpenAI/Chatfire 基础地址，不要带 `/v1`，默认 `https://api.chatfire.site` | 使用 OpenAI 时建议配置 |
+| `OPENAI_API_KEY` | OpenAI/当前 Provider 图片接口使用的 API 密钥 | 使用 OpenAI 时必需 |
+| `OPENAI_API_URL` | OpenAI/当前 Provider 基础地址，不要带 `/v1` | 使用 OpenAI 时建议配置 |
 | `OPENAI_IMAGE_MODEL` | OpenAI 图片模型名称，默认 `gpt-image-2` | 可选 |
-| `MAYNOR_API_KEY` | Chatfire / MAYNOR 标准模型接口使用的 API 密钥 | 使用 Doubao 或第三方 MAYNOR 时必需 |
-| `MAYNOR_API_URL` | MAYNOR / Chatfire 真实 API 基础地址，不能填 Apifox 文档页，默认 `https://api.chatfire.site` | 使用 Doubao 或第三方 MAYNOR 时必需 |
+| `MAYNOR_API_KEY` | 当前 Provider / MAYNOR 标准模型接口使用的 API 密钥 | 使用 Doubao 或第三方 MAYNOR 时必需 |
+| `MAYNOR_API_URL` | MAYNOR / 当前 Provider 真实 API 基础地址，不能填 Apifox 文档页 | 使用 Doubao 或第三方 MAYNOR 时必需 |
 | `MAYNOR_API_PROTOCOL` | `standard` 或 `hybrid`，推荐 `standard` | 使用第三方 MAYNOR 时建议配置 |
 | `STRIPE_SECRET_KEY` | Stripe 服务端密钥，构建支付接口时需要 | 如启用支付则必需 |
 | `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Stripe 前端公钥 | 如启用支付则必需 |

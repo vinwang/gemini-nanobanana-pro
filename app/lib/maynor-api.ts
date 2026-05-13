@@ -1,4 +1,7 @@
-import { getChatfireBaseUrl } from '@/app/lib/chatfire'
+import {
+  getDefaultProviderBaseUrl,
+  isDefaultProvider
+} from '@/app/lib/provider-config'
 
 export type MaynorApiProtocol = 'hybrid' | 'standard'
 
@@ -12,13 +15,18 @@ export function getMaynorApiConfig(
   customApiKey?: string,
   customApiUrl?: string
 ): { apiKey: string; apiUrl: string; protocol: MaynorApiProtocol } {
+  const useGenericGrsaiConfig = isDefaultProvider('grsai')
   const apiKey = customApiKey || process.env.MAYNOR_API_KEY || process.env.GEMINI_API_KEY || ''
   const apiUrl = normalizeMaynorApiUrl(
-    customApiUrl || process.env.MAYNOR_API_URL || getChatfireBaseUrl()
+    customApiUrl || getPreferredMaynorApiUrl(useGenericGrsaiConfig) || getDefaultProviderBaseUrl()
   )
   const protocol = getMaynorApiProtocol()
 
-  return { apiKey, apiUrl, protocol }
+  return {
+    apiKey: apiKey || getPreferredMaynorApiKey(useGenericGrsaiConfig),
+    apiUrl,
+    protocol
+  }
 }
 
 /**
@@ -42,6 +50,32 @@ export function normalizeMaynorApiUrl(apiUrl: string): string {
     .replace(/\/v1\/images\/generations$/i, '')
     .replace(/\/images\/generations$/i, '')
     .replace(/\/v1$/i, '')
+}
+
+/**
+ * 获取 MAYNOR/Gemini 路由优先使用的 API Key
+ * @param useGenericGrsaiConfig 当前是否优先读取 Grsai 通用配置
+ * @returns 可用的 API Key
+ */
+function getPreferredMaynorApiKey(useGenericGrsaiConfig: boolean): string {
+  if (useGenericGrsaiConfig) {
+    return process.env.IMAGE_API_KEY || process.env.MAYNOR_API_KEY || process.env.GEMINI_API_KEY || ''
+  }
+
+  return process.env.MAYNOR_API_KEY || process.env.GEMINI_API_KEY || process.env.IMAGE_API_KEY || ''
+}
+
+/**
+ * 获取 MAYNOR/Gemini 路由优先使用的 API URL
+ * @param useGenericGrsaiConfig 当前是否优先读取 Grsai 通用配置
+ * @returns 可用的 API URL
+ */
+function getPreferredMaynorApiUrl(useGenericGrsaiConfig: boolean): string {
+  if (useGenericGrsaiConfig) {
+    return process.env.IMAGE_API_URL || process.env.MAYNOR_API_URL || ''
+  }
+
+  return process.env.MAYNOR_API_URL || process.env.IMAGE_API_URL || ''
 }
 
 

@@ -131,6 +131,10 @@
     gap: 1rem !important;
   }
 
+  .result-section > div > div:nth-child(2) {
+    grid-template-columns: 1fr !important;
+  }
+
   .result-image {
     height: auto !important;
     max-height: 240px !important;

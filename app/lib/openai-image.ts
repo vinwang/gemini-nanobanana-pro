@@ -1,4 +1,7 @@
-import { getChatfireBaseUrl } from '@/app/lib/chatfire'
+import {
+  getDefaultProviderBaseUrl,
+  isDefaultProvider
+} from '@/app/lib/provider-config'
 
 /**
  * OpenAI 图像请求配置
@@ -12,10 +15,12 @@ export function getOpenAiImageConfig(
   apiUrl?: string,
   model?: string
 ): { apiKey: string; apiUrl: string; model: string } {
+  const useGenericGrsaiConfig = isDefaultProvider('grsai')
+
   return {
-    apiKey: apiKey || process.env.OPENAI_API_KEY || '',
-    apiUrl: sanitizeApiUrl(apiUrl || process.env.OPENAI_API_URL || getChatfireBaseUrl()),
-    model: model || process.env.OPENAI_IMAGE_MODEL || 'gpt-image-2'
+    apiKey: apiKey || getPreferredApiKey(useGenericGrsaiConfig),
+    apiUrl: sanitizeApiUrl(apiUrl || getPreferredApiUrl(useGenericGrsaiConfig) || getDefaultProviderBaseUrl()),
+    model: model || process.env.OPENAI_IMAGE_MODEL || process.env.IMAGE_MODEL || 'gpt-image-2'
   }
 }
 
@@ -26,6 +31,32 @@ export function getOpenAiImageConfig(
  */
 export function sanitizeApiUrl(apiUrl: string): string {
   return apiUrl.replace(/\/+$/, '')
+}
+
+/**
+ * 获取 OpenAI 图片路由优先使用的 API Key
+ * @param useGenericGrsaiConfig 当前是否优先读取 Grsai 通用配置
+ * @returns 可用的 API Key
+ */
+function getPreferredApiKey(useGenericGrsaiConfig: boolean): string {
+  if (useGenericGrsaiConfig) {
+    return process.env.IMAGE_API_KEY || process.env.OPENAI_API_KEY || process.env.MAYNOR_API_KEY || ''
+  }
+
+  return process.env.OPENAI_API_KEY || process.env.IMAGE_API_KEY || ''
+}
+
+/**
+ * 获取 OpenAI 图片路由优先使用的 API URL
+ * @param useGenericGrsaiConfig 当前是否优先读取 Grsai 通用配置
+ * @returns 可用的 API URL
+ */
+function getPreferredApiUrl(useGenericGrsaiConfig: boolean): string {
+  if (useGenericGrsaiConfig) {
+    return process.env.IMAGE_API_URL || process.env.OPENAI_API_URL || process.env.MAYNOR_API_URL || ''
+  }
+
+  return process.env.OPENAI_API_URL || process.env.IMAGE_API_URL || ''
 }
 
 /**

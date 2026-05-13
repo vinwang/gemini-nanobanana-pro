@@ -8,6 +8,7 @@ import {
   getMaynorApiConfig,
   shouldUseMaynorStandardProtocol
 } from '@/app/lib/maynor-api'
+import { resolveProviderModel } from '@/app/lib/model-map'
 
 export const runtime = 'nodejs'
 export const maxDuration = 60
@@ -28,15 +29,7 @@ async function geminiHandler(request: NextRequest) {
     // 优先使用前端传来的自定义配置，否则使用环境变量
     const { apiKey, apiUrl, protocol } = getMaynorApiConfig(customApiKey, customApiUrl)
 
-    // 模型映射：将前端模型名映射到实际的API模型名
-    const modelMap: { [key: string]: string } = {
-      'gemini-3-pro-image-preview': 'gemini-3-pro-image-preview',
-      'gemini': 'gemini-2.5-flash-image',
-      'gemini-2.5-flash-image': 'gemini-2.5-flash-image'
-    }
-
-    // 优先使用前端传递的模型，否则使用环境变量，最后使用默认值
-    const model = customModel ? modelMap[customModel] || customModel : (process.env.GEMINI_MODEL || 'gemini-2.5-flash-image')
+    const model = resolveProviderModel(customModel)
 
     if (!apiKey) {
       return NextResponse.json({ error: 'API配置缺失，请在页面右上角配置 API 密钥' }, { status: 500 })

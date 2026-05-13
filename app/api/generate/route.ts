@@ -5,6 +5,7 @@ import {
   detectApiErrorCodeFromException
 } from '@/app/lib/api-error'
 import { getMaynorApiConfig } from '@/app/lib/maynor-api'
+import { resolveProviderModel } from '@/app/lib/model-map'
 
 export const runtime = 'nodejs'
 export const maxDuration = 60
@@ -29,15 +30,7 @@ async function generateHandler(request: NextRequest) {
       return NextResponse.json({ error: 'API配置缺失，请在页面右上角配置 API 密钥' }, { status: 500 })
     }
 
-    // 模型映射：将前端模型名映射到实际的API模型名
-    const modelMap: { [key: string]: string } = {
-      'gemini-3-pro-image-preview': 'gemini-3-pro-image-preview',
-      'gemini': 'gemini-2.5-flash-image',
-      'gemini-2.5-flash-image': 'gemini-2.5-flash-image'
-    }
-
-    // 优先使用前端传递的模型，否则使用环境变量，最后使用默认值
-    const model = customModel ? modelMap[customModel] || customModel : (process.env.GEMINI_MODEL || 'gemini-2.5-flash-image')
+    const model = resolveProviderModel(customModel)
 
     console.log('使用 API URL:', apiUrl)
     console.log('使用模型:', model)

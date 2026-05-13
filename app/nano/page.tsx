@@ -95,18 +95,6 @@ export default function NanoPage() {
     }
   ]
 
-  // 页面加载时检查是否需要显示额度耗尽弹窗（首次访问）
-  useEffect(() => {
-    const hasSeenQuotaModal = localStorage.getItem('hasSeenQuotaModal')
-    if (!hasSeenQuotaModal) {
-      // 延迟1秒后显示，让页面先加载
-      const timer = setTimeout(() => {
-        setShowQuotaModal(true)
-      }, 1000)
-      return () => clearTimeout(timer)
-    }
-  }, [])
-
   // 关闭额度弹窗并记录到 localStorage
   const handleCloseQuotaModal = () => {
     setShowQuotaModal(false)
@@ -377,10 +365,7 @@ export default function NanoPage() {
         if (apiConfig.geminiApiUrl) {
           requestData.apiUrl = apiConfig.geminiApiUrl
         }
-        // 添加模型标识
-        if (model === 'gemini-3-pro-image-preview') {
-          requestData.model = 'gemini-3-pro-image-preview'
-        }
+        requestData.model = model
       } else if (model === 'openai') {
         if (apiConfig.openaiApiKey) {
           requestData.apiKey = apiConfig.openaiApiKey
@@ -402,6 +387,13 @@ export default function NanoPage() {
         hasApiKey: !!requestData.apiKey,
         apiUrl: requestData.apiUrl,
         model
+      })
+      console.log('DEBUG_GENERATE_REQUEST', {
+        selectedModel: model,
+        mode,
+        apiEndpoint,
+        requestModel: requestData.model || null,
+        providerUrl: requestData.apiUrl || 'env-default'
       })
 
       const response = await fetch(apiEndpoint, {
@@ -503,7 +495,7 @@ export default function NanoPage() {
       return false
     }
 
-    if (normalizedUrl !== 'https://api.chatfire.site') {
+    if (normalizedUrl !== 'https://grsaiapi.com') {
       return true
     }
 
@@ -1668,14 +1660,14 @@ export default function NanoPage() {
       {/* Error Display */}
       {error && (
         <div className="error-section" style={{
-          padding: '2rem',
-          maxWidth: '1400px',
+          padding: '0 1.2rem 1.2rem',
+          maxWidth: '1040px',
           margin: '0 auto'
         }}>
           <div style={{
             background: 'linear-gradient(135deg, #dc2626, #b91c1c)',
-            borderRadius: '1rem',
-            padding: '1.5rem',
+            borderRadius: '1.4rem',
+            padding: '1.25rem 1.5rem',
             textAlign: 'center',
             border: '1px solid #ef4444'
           }}>
@@ -1708,55 +1700,104 @@ export default function NanoPage() {
       {/* Result Display */}
       {result && (
         <div className="result-section" style={{
-          padding: '2rem',
-          maxWidth: '1400px',
+          padding: '0 1.2rem 1.5rem',
+          maxWidth: '1040px',
           margin: '0 auto'
         }}>
-          <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-            <h3 style={{
-              fontSize: '1.5rem',
-              marginBottom: '0.5rem',
-              background: 'linear-gradient(135deg, #10b981, #00d4ff)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text'
+          <div style={{
+            borderRadius: '1.8rem',
+            background: 'linear-gradient(180deg, rgba(255,255,255,0.035), rgba(255,255,255,0.018))',
+            border: '1px solid rgba(255,255,255,0.08)',
+            boxShadow: '0 24px 60px rgba(0,0,0,0.24)',
+            padding: '1.35rem'
+          }}>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'end',
+              gap: '1rem',
+              marginBottom: '1.25rem',
+              flexWrap: 'wrap'
             }}>
-            {t.result.title}
-          </h3>
-          </div>
+              <div>
+                <p style={{
+                  margin: 0,
+                  color: '#f59e0b',
+                  letterSpacing: '0.18em',
+                  fontSize: '0.78rem',
+                  textTransform: 'uppercase'
+                }}>
+                  Result
+                </p>
+                <h3 style={{
+                  fontSize: '1.45rem',
+                  margin: '0.35rem 0 0',
+                  color: '#f8fafc'
+                }}>
+                  {t.result.title}
+                </h3>
+              </div>
+              <p style={{
+                margin: 0,
+                color: '#9ca3af',
+                fontSize: '0.9rem'
+              }}>
+                结果固定停靠在工作台下方，便于继续调整 prompt 和模型。
+              </p>
+            </div>
 
           {/* 图片显示 */}
           {result.imageData || result.imageUrl ? (
-            <div style={{ textAlign: 'center' }}>
-              <img
-                id="generated-image"
-                className="result-image"
-                src={result.imageUrl || `data:${result.mimeType};base64,${result.imageData}`}
-                alt="Generated"
-                style={{
-                  maxWidth: '100%',
-                  maxHeight: '600px',
-                  borderRadius: '1.5rem',
-                  boxShadow: '0 15px 50px rgba(0,0,0,0.6)',
-                  transition: 'all 0.3s ease'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'scale(1.02)'
-                  e.currentTarget.style.boxShadow = '0 20px 60px rgba(0,0,0,0.7)'
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'none'
-                  e.currentTarget.style.boxShadow = '0 15px 50px rgba(0,0,0,0.6)'
-                }}
-              />
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'minmax(0, 1fr) 240px',
+              gap: '1.2rem',
+              alignItems: 'start'
+            }}>
+              <div style={{ textAlign: 'center' }}>
+                <img
+                  id="generated-image"
+                  className="result-image"
+                  src={result.imageUrl || `data:${result.mimeType};base64,${result.imageData}`}
+                  alt="Generated"
+                  style={{
+                    maxWidth: '100%',
+                    maxHeight: '620px',
+                    borderRadius: '1.4rem',
+                    boxShadow: '0 15px 50px rgba(0,0,0,0.6)',
+                    transition: 'all 0.3s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'scale(1.02)'
+                    e.currentTarget.style.boxShadow = '0 20px 60px rgba(0,0,0,0.7)'
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'none'
+                    e.currentTarget.style.boxShadow = '0 15px 50px rgba(0,0,0,0.6)'
+                  }}
+                />
+              </div>
               <div style={{
-                marginTop: '1rem',
+                background: 'rgba(255,255,255,0.03)',
+                border: '1px solid rgba(255,255,255,0.07)',
+                borderRadius: '1.2rem',
+                padding: '1rem',
                 display: 'flex',
-                gap: '1rem',
-                justifyContent: 'center',
-                flexWrap: 'wrap'
+                flexDirection: 'column',
+                gap: '0.85rem'
               }}>
-                <button
+                <div style={{
+                  fontSize: '0.86rem',
+                  color: '#9ca3af',
+                  lineHeight: '1.6'
+                }}>
+                  下载、分享和结果摘要收纳到右侧，保持主视觉完整，操作也更顺手。
+                </div>
+                <div style={{
+                  display: 'grid',
+                  gap: '0.75rem'
+                }}>
+                  <button
                   onClick={() => {
                     const img = document.getElementById('generated-image') as HTMLImageElement
                     if (img) {
@@ -1780,15 +1821,15 @@ export default function NanoPage() {
                       }, 'image/png')
                     }
                   }}
-                  style={{
-                    padding: '0.75rem 1.5rem',
-                    background: 'linear-gradient(135deg, #10b981, #059669)',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '0.75rem',
-                    cursor: 'pointer',
-                    fontSize: '1rem',
-                    fontWeight: '500',
+                    style={{
+                      padding: '0.9rem 1rem',
+                      background: 'linear-gradient(135deg, #10b981, #059669)',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '0.95rem',
+                      cursor: 'pointer',
+                      fontSize: '0.95rem',
+                      fontWeight: '500',
                     display: 'flex',
                     alignItems: 'center',
                     gap: '0.5rem',
@@ -1811,15 +1852,15 @@ export default function NanoPage() {
                     // 打开分享弹窗
                     setShowShareModal(true)
                   }}
-                  style={{
-                    padding: '0.75rem 1.5rem',
-                    background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '0.75rem',
-                    cursor: 'pointer',
-                    fontSize: '1rem',
-                    fontWeight: '500',
+                    style={{
+                      padding: '0.9rem 1rem',
+                      background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '0.95rem',
+                      cursor: 'pointer',
+                      fontSize: '0.95rem',
+                      fontWeight: '500',
                     display: 'flex',
                     alignItems: 'center',
                     gap: '0.5rem',
@@ -1837,13 +1878,26 @@ export default function NanoPage() {
                 >
                   {t.result.share}
                 </button>
+                </div>
+                {(result.text || result.message) && (
+                  <div style={{
+                    marginTop: '0.25rem',
+                    paddingTop: '0.9rem',
+                    borderTop: '1px solid rgba(255,255,255,0.08)',
+                    fontSize: '0.84rem',
+                    lineHeight: '1.7',
+                    color: '#d1d5db'
+                  }}>
+                    {result.text || result.message}
+                  </div>
+                )}
               </div>
             </div>
           ) : result.text || result.content || result.message ? (
             /* 文本响应显示 */
             <div style={{
-              backgroundColor: '#111111',
-              borderRadius: '1rem',
+              backgroundColor: 'rgba(255,255,255,0.03)',
+              borderRadius: '1.2rem',
               padding: '2rem',
               textAlign: 'center',
               maxWidth: '600px',
@@ -1874,8 +1928,8 @@ export default function NanoPage() {
             </div>
           ) : (
             <div style={{
-              backgroundColor: '#111111',
-              borderRadius: '1rem',
+              backgroundColor: 'rgba(255,255,255,0.03)',
+              borderRadius: '1.2rem',
               padding: '2rem',
               textAlign: 'center'
             }}>
@@ -1900,6 +1954,7 @@ export default function NanoPage() {
               </button>
             </div>
           )}
+          </div>
         </div>
       )}
 
@@ -2093,9 +2148,21 @@ export default function NanoPage() {
               >
                 确定
               </button>
+                </div>
+                {(result.text || result.message) && (
+                  <div style={{
+                    marginTop: '0.25rem',
+                    paddingTop: '0.9rem',
+                    borderTop: '1px solid rgba(255,255,255,0.08)',
+                    fontSize: '0.84rem',
+                    lineHeight: '1.7',
+                    color: '#d1d5db'
+                  }}>
+                    {result.text || result.message}
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        </div>
       )}
 
       {/* Share Modal */}
@@ -2179,7 +2246,7 @@ export default function NanoPage() {
               配置自定义的 API 密钥和中转服务地址。留空则使用默认服务。
               <br />
               <a
-                href="https://api.chatfire.site"
+                href="https://grsaiapi.com"
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{ color: '#10b981', textDecoration: 'underline' }}
@@ -2211,7 +2278,7 @@ export default function NanoPage() {
                   type="password"
                   value={apiConfig.geminiApiKey}
                   onChange={(e) => setApiConfig({ ...apiConfig, geminiApiKey: e.target.value })}
-                  placeholder="从 Chatfire 获取"
+                  placeholder="从默认服务获取"
                   style={{
                     width: '100%',
                     padding: '0.75rem',
@@ -2237,7 +2304,7 @@ export default function NanoPage() {
                   type="text"
                   value={apiConfig.geminiApiUrl}
                   onChange={(e) => setApiConfig({ ...apiConfig, geminiApiUrl: e.target.value })}
-                  placeholder="https://api.chatfire.site"
+                  placeholder="https://grsaiapi.com"
                   style={{
                     width: '100%',
                     padding: '0.75rem',
@@ -2300,7 +2367,7 @@ export default function NanoPage() {
                   type="text"
                   value={apiConfig.openaiApiUrl}
                   onChange={(e) => setApiConfig({ ...apiConfig, openaiApiUrl: e.target.value })}
-                  placeholder="https://api.chatfire.site"
+                  placeholder="https://grsaiapi.com"
                   style={{
                     width: '100%',
                     padding: '0.75rem',
@@ -2337,7 +2404,7 @@ export default function NanoPage() {
                   type="password"
                   value={apiConfig.doubaoApiKey}
                   onChange={(e) => setApiConfig({ ...apiConfig, doubaoApiKey: e.target.value })}
-                  placeholder="从 Chatfire 获取"
+                  placeholder="从默认服务获取"
                   style={{
                     width: '100%',
                     padding: '0.75rem',
@@ -2363,7 +2430,7 @@ export default function NanoPage() {
                   type="text"
                   value={apiConfig.doubaoApiUrl}
                   onChange={(e) => setApiConfig({ ...apiConfig, doubaoApiUrl: e.target.value })}
-                  placeholder="https://api.chatfire.site"
+                  placeholder="https://grsaiapi.com"
                   style={{
                     width: '100%',
                     padding: '0.75rem',

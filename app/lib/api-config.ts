@@ -25,11 +25,11 @@ const STORAGE_KEY = 'nanobanana_api_config';
 export function getDefaultApiConfig(): ApiConfig {
   return {
     geminiApiKey: '',
-    geminiApiUrl: 'https://api.chatfire.site',
+    geminiApiUrl: 'https://grsaiapi.com',
     openaiApiKey: '',
     openaiApiUrl: '',
     doubaoApiKey: '',
-    doubaoApiUrl: 'https://api.chatfire.site',
+    doubaoApiUrl: 'https://grsaiapi.com',
   };
 }
 
