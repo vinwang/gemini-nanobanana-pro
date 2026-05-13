@@ -4,6 +4,12 @@ import {
   detectApiErrorCode,
   detectApiErrorCodeFromException
 } from '@/app/lib/api-error'
+import {
+  buildGrsaiImageRequest,
+  getGrsaiResponseStatus,
+  parseGrsaiImageResponse,
+  shouldUseGrsaiImageProtocol
+} from '@/app/lib/grsai-image'
 import { getMaynorApiConfig } from '@/app/lib/maynor-api'
 import { resolveProviderModel } from '@/app/lib/model-map'
 
@@ -17,7 +23,7 @@ export const maxDuration = 60
  */
 async function generateHandler(request: NextRequest) {
   try {
-    const { prompt, apiKey: customApiKey, apiUrl: customApiUrl, model: customModel } = await request.json()
+    const { prompt, apiKey: customApiKey, apiUrl: customApiUrl, model: customModel, size } = await request.json()
 
     if (!prompt) {
       return NextResponse.json({ error: '请提供描述' }, { status: 400 })
@@ -32,31 +38,15 @@ async function generateHandler(request: NextRequest) {
 
     const model = resolveProviderModel(customModel)
 
-    console.log('使用 API URL:', apiUrl)
-    console.log('使用模型:', model)
+    const upstreamRequest = shouldUseGrsaiImageProtocol(apiUrl)
+      ? buildGrsaiImageRequest({ apiKey, apiUrl, model, prompt, size })
+      : buildChatCompletionsRequest(apiUrl, apiKey, model, prompt)
 
-    // 使用正确的API格式
-    const response = await fetch(
-      `${apiUrl}/v1/chat/completions`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`
-        },
-        body: JSON.stringify({
-          model: model,
-          messages: [{
-            role: "user",
-            content: [
-              { type: "text", text: `Create a picture: ${prompt}` }
-            ]
-          }],
-          temperature: 0.7,
-          max_tokens: 4096
-        })
-      }
-    )
+    const response = await fetch(upstreamRequest.url, {
+      method: upstreamRequest.method,
+      headers: upstreamRequest.headers,
+      body: upstreamRequest.body
+    })
 
     if (!response.ok) {
       const errorData = await response.json()
@@ -68,14 +58,16 @@ async function generateHandler(request: NextRequest) {
     }
 
     const data = await response.json()
-    console.log('API响应:', JSON.stringify(data, null, 2))
+
+    if (shouldUseGrsaiImageProtocol(apiUrl)) {
+      const parsed = parseGrsaiImageResponse(data)
+      return NextResponse.json(parsed, { status: getGrsaiResponseStatus(parsed) })
+    }
     
     // 解析 OpenAI 格式响应
     if (data.choices && data.choices[0]) {
       const choice = data.choices[0]
       const message = choice.message
-      
-      console.log('Message对象:', JSON.stringify(message, null, 2))
       
       if (message && message.content) {
         // 检查是否有图片内容
@@ -138,6 +130,41 @@ async function generateHandler(request: NextRequest) {
       createApiErrorResponse(detectApiErrorCodeFromException(error), 500),
       { status: 500 }
     )
+  }
+}
+
+/**
+ * 构造 OpenAI 兼容 chat/completions 文生图请求
+ * @param apiUrl API 基础地址
+ * @param apiKey 鉴权密钥
+ * @param model 上游模型名
+ * @param prompt 用户提示词
+ * @returns 可传给 fetch 的 JSON 请求
+ */
+function buildChatCompletionsRequest(
+  apiUrl: string,
+  apiKey: string,
+  model: string,
+  prompt: string
+): { body: string; headers: Record<string, string>; method: string; url: string } {
+  return {
+    url: `${apiUrl}/v1/chat/completions`,
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${apiKey}`
+    },
+    body: JSON.stringify({
+      model,
+      messages: [{
+        role: 'user',
+        content: [
+          { type: 'text', text: prompt }
+        ]
+      }],
+      temperature: 0.7,
+      max_tokens: 4096
+    })
   }
 }
 

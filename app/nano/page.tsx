@@ -6,7 +6,7 @@ import BrowserWarning from '../components/BrowserWarning'
 import { useLanguage } from '../i18n/LanguageContext'
 import ShareModal from '../components/ShareModal'
 import FreeQuotaModal from '../components/FreeQuotaModal'
-import { loadApiConfig, saveApiConfig, type ApiConfig } from '../lib/api-config'
+import { getDefaultApiConfig, loadApiConfig, saveApiConfig, type ApiConfig } from '../lib/api-config'
 
 type Mode = 'upload' | 'text'
 type Style = 'none' | 'enhance' | 'artistic' | 'anime' | 'photo'
@@ -31,7 +31,11 @@ export default function NanoPage() {
   const [showShareModal, setShowShareModal] = useState(false)
   const [showQuotaModal, setShowQuotaModal] = useState(false)
   const [showApiConfig, setShowApiConfig] = useState(false)
-  const [apiConfig, setApiConfig] = useState<ApiConfig>(() => loadApiConfig())
+  const [apiConfig, setApiConfig] = useState<ApiConfig>(() => getDefaultApiConfig())
+
+  useEffect(() => {
+    setApiConfig(loadApiConfig())
+  }, [])
 
   const quickPrompts = [
     { icon: '🏔️', text: '风景', value: '美丽的自然风景' },
@@ -288,10 +292,6 @@ export default function NanoPage() {
   }
 
   const handleGenerate = async () => {
-    // 调试：显示当前配置
-    console.log('🔍 当前 API 配置:', apiConfig)
-    console.log('🎯 选择的模型:', model)
-
     if (mode === 'text' && prompt.length < 3) {
       showError('输入提示', '请输入至少3个字符的描述')
       return
@@ -347,11 +347,9 @@ export default function NanoPage() {
         ...requestBody
       }
 
-      // 如果是豆包模型，添加尺寸参数
-      if (model === 'doubao') {
+      // 图片生成模型统一向后端传页面尺寸，后端按 provider 转换字段名和值
+      if (model === 'doubao' || model === 'openai' || model === 'gemini' || model === 'gemini-3-pro-image-preview') {
         requestData.size = imageSize
-      } else if (model === 'openai' && mode === 'text') {
-        requestData.size = mapImageSizeToOpenAi(imageSize)
       }
 
       // 使用时间戳作为用户标识
@@ -382,19 +380,6 @@ export default function NanoPage() {
           requestData.apiUrl = apiConfig.doubaoApiUrl
         }
       }
-
-      console.log('发送请求到:', apiEndpoint, '配置:', {
-        hasApiKey: !!requestData.apiKey,
-        apiUrl: requestData.apiUrl,
-        model
-      })
-      console.log('DEBUG_GENERATE_REQUEST', {
-        selectedModel: model,
-        mode,
-        apiEndpoint,
-        requestModel: requestData.model || null,
-        providerUrl: requestData.apiUrl || 'env-default'
-      })
 
       const response = await fetch(apiEndpoint, {
         method: 'POST',
@@ -502,22 +487,6 @@ export default function NanoPage() {
     return Boolean(apiKey.trim())
   }
 
-  /**
-   * 将页面尺寸选项映射为 OpenAI 图片接口支持的尺寸
-   * @param size 页面上的尺寸值
-   * @returns OpenAI 图片接口可接受的尺寸字符串
-   */
-  const mapImageSizeToOpenAi = (size: string): string => {
-    switch (size) {
-      case '2k':
-        return '1536x1024'
-      case '4k':
-        return '1024x1536'
-      default:
-        return '1024x1024'
-    }
-  }
-
   // 下载图片
   const downloadImage = (imageData: string, mimeType: string = 'image/png') => {
     const link = document.createElement('a')
@@ -560,6 +529,8 @@ export default function NanoPage() {
       showError('提示', '复制失败，请手动复制')
     })
   }
+
+  const resultSummaryText = result?.text || result?.content || result?.message || ''
 
   return (
     <div style={{ 
@@ -937,7 +908,7 @@ export default function NanoPage() {
         </div>
         
         {/* Size Selector for image APIs */}
-        {(model === 'doubao' || model === 'openai') && (
+        {(model === 'doubao' || model === 'openai' || model === 'gemini' || model === 'gemini-3-pro-image-preview') && (
           <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
             <span style={{ color: '#9ca3af', fontSize: '0.84rem' }}>{t.model.size}</span>
             {['1k', '2k', '4k'].map((size) => (
@@ -1879,7 +1850,7 @@ export default function NanoPage() {
                   {t.result.share}
                 </button>
                 </div>
-                {(result.text || result.message) && (
+                {resultSummaryText && (
                   <div style={{
                     marginTop: '0.25rem',
                     paddingTop: '0.9rem',
@@ -1888,12 +1859,12 @@ export default function NanoPage() {
                     lineHeight: '1.7',
                     color: '#d1d5db'
                   }}>
-                    {result.text || result.message}
+                    {resultSummaryText}
                   </div>
                 )}
               </div>
             </div>
-          ) : result.text || result.content || result.message ? (
+          ) : resultSummaryText ? (
             /* 文本响应显示 */
             <div style={{
               backgroundColor: 'rgba(255,255,255,0.03)',
@@ -1905,11 +1876,11 @@ export default function NanoPage() {
             }}>
               <div style={{ color: '#10b981', fontSize: '2rem', marginBottom: '1rem' }}>💭</div>
               <p style={{ fontSize: '1.1rem', color: '#ccc', lineHeight: '1.6' }}>
-                {result.text || result.content || result.message}
+                {resultSummaryText}
               </p>
               <button
                 onClick={() => {
-                  navigator.clipboard.writeText(result.text || result.content || result.message)
+                  navigator.clipboard.writeText(resultSummaryText)
                   showError('复制成功', '文本已复制到剪贴板！')
                 }}
                 style={{
@@ -1933,10 +1904,10 @@ export default function NanoPage() {
               padding: '2rem',
               textAlign: 'center'
             }}>
-              <p style={{ fontSize: '1.1rem' }}>{result.text || result.content || result.message}</p>
+              <p style={{ fontSize: '1.1rem' }}>{resultSummaryText}</p>
               <button
                 onClick={() => {
-                  navigator.clipboard.writeText(result.text || result.content || result.message)
+                  navigator.clipboard.writeText(resultSummaryText)
                   showError('复制成功', '文本已复制到剪贴板！')
                 }}
                 style={{
@@ -2148,21 +2119,9 @@ export default function NanoPage() {
               >
                 确定
               </button>
-                </div>
-                {(result.text || result.message) && (
-                  <div style={{
-                    marginTop: '0.25rem',
-                    paddingTop: '0.9rem',
-                    borderTop: '1px solid rgba(255,255,255,0.08)',
-                    fontSize: '0.84rem',
-                    lineHeight: '1.7',
-                    color: '#d1d5db'
-                  }}>
-                    {result.text || result.message}
-                  </div>
-                )}
-              </div>
             </div>
+          </div>
+        </div>
       )}
 
       {/* Share Modal */}

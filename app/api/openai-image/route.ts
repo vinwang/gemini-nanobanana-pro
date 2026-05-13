@@ -4,6 +4,11 @@ import {
   detectApiErrorCode,
   detectApiErrorCodeFromException
 } from '@/app/lib/api-error'
+import {
+  buildGrsaiImageRequest,
+  parseGrsaiImageResponse,
+  shouldUseGrsaiImageProtocol
+} from '@/app/lib/grsai-image'
 import { getOpenAiImageConfig, parseOpenAiImageResponse } from '@/app/lib/openai-image'
 
 export const runtime = 'nodejs'
@@ -48,15 +53,15 @@ async function openAiImageHandler(request: NextRequest) {
 
     const imageData = resolveSingleImage(body.imageData, body.imageDataArray)
 
-    console.log('OpenAI 图片接口调用:', {
-      apiUrl,
-      model,
-      hasImage: Boolean(imageData)
-    })
+    const upstreamRequest = imageData
+      ? buildOpenAiEditUpstreamRequest(apiUrl, apiKey, model, prompt, imageData, body.size)
+      : buildOpenAiGenerateUpstreamRequest(apiUrl, apiKey, model, prompt, body.size)
 
-    const response = imageData
-      ? await requestImageEdit(apiUrl, apiKey, model, prompt, imageData)
-      : await requestImageGeneration(apiUrl, apiKey, model, prompt, body.size)
+    const response = await fetch(upstreamRequest.url, {
+      method: upstreamRequest.method,
+      headers: upstreamRequest.headers,
+      body: upstreamRequest.body
+    })
 
     const payload = await readResponsePayload(response)
     if (!response.ok) {
@@ -67,7 +72,9 @@ async function openAiImageHandler(request: NextRequest) {
       )
     }
 
-    const parsed = parseOpenAiImageResponse(payload)
+    const parsed = shouldUseGrsaiImageProtocol(apiUrl)
+      ? parseGrsaiImageResponse(payload)
+      : parseOpenAiImageResponse(payload)
     return NextResponse.json({
       ...parsed,
       success: true,
@@ -91,14 +98,19 @@ async function openAiImageHandler(request: NextRequest) {
  * @param size 可选图片尺寸
  * @returns 上游接口响应
  */
-async function requestImageGeneration(
+function buildOpenAiGenerateUpstreamRequest(
   apiUrl: string,
   apiKey: string,
   model: string,
   prompt: string,
   size?: string
-): Promise<Response> {
-  return fetch(`${apiUrl}/v1/images/generations`, {
+): { url: string; method: string; headers: Record<string, string>; body: string } {
+  if (shouldUseGrsaiImageProtocol(apiUrl)) {
+    return buildGrsaiImageRequest({ apiKey, apiUrl, model, prompt, size })
+  }
+
+  return {
+    url: `${apiUrl}/v1/images/generations`,
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -107,10 +119,10 @@ async function requestImageGeneration(
     body: JSON.stringify({
       model,
       prompt,
-      size: size || '1024x1024',
+      size: mapOpenAiImageSize(size),
       response_format: 'b64_json'
     })
-  })
+  }
 }
 
 /**
@@ -122,26 +134,39 @@ async function requestImageGeneration(
  * @param imageData 单张 base64 图片
  * @returns 上游接口响应
  */
-async function requestImageEdit(
+function buildOpenAiEditUpstreamRequest(
   apiUrl: string,
   apiKey: string,
   model: string,
   prompt: string,
-  imageData: string
-): Promise<Response> {
+  imageData: string,
+  size?: string
+): { url: string; method: string; headers: Record<string, string>; body: FormData | string } {
+  if (shouldUseGrsaiImageProtocol(apiUrl)) {
+    return buildGrsaiImageRequest({
+      apiKey,
+      apiUrl,
+      model,
+      prompt,
+      imageDataArray: [imageData],
+      size
+    })
+  }
+
   const formData = new FormData()
   formData.append('model', model)
   formData.append('prompt', prompt)
   formData.append('response_format', 'b64_json')
   formData.append('image', buildImageBlob(imageData), 'input.png')
 
-  return fetch(`${apiUrl}/v1/images/edits`, {
+  return {
+    url: `${apiUrl}/v1/images/edits`,
     method: 'POST',
     headers: {
       Authorization: `Bearer ${apiKey}`
     },
     body: formData
-  })
+  }
 }
 
 /**
@@ -195,6 +220,26 @@ async function readResponsePayload(response: Response): Promise<unknown> {
     return JSON.parse(rawText)
   } catch {
     return { raw: rawText }
+  }
+}
+
+/**
+ * 将 OpenAI 图片尺寸规范化为非 Grsai Images API 可接受的值
+ * @param size 页面选择或接口传入的尺寸
+ * @returns OpenAI Images API 尺寸字符串
+ */
+function mapOpenAiImageSize(size?: string): string {
+  switch ((size || '').toLowerCase()) {
+    case '2k':
+    case '1536x1024':
+      return '1536x1024'
+    case '4k':
+    case '1024x1536':
+      return '1024x1536'
+    case '1024x1024':
+      return '1024x1024'
+    default:
+      return '1024x1024'
   }
 }
 

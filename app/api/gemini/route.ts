@@ -5,6 +5,11 @@ import {
   detectApiErrorCodeFromException
 } from '@/app/lib/api-error'
 import {
+  buildGrsaiImageRequest,
+  parseGrsaiImageResponse,
+  shouldUseGrsaiImageProtocol
+} from '@/app/lib/grsai-image'
+import {
   getMaynorApiConfig,
   shouldUseMaynorStandardProtocol
 } from '@/app/lib/maynor-api'
@@ -20,7 +25,7 @@ export const maxDuration = 60
  */
 async function geminiHandler(request: NextRequest) {
   try {
-    const { prompt, imageData, imageDataArray, apiKey: customApiKey, apiUrl: customApiUrl, model: customModel } = await request.json()
+    const { prompt, imageData, imageDataArray, apiKey: customApiKey, apiUrl: customApiUrl, model: customModel, size } = await request.json()
 
     if (!prompt) {
       return NextResponse.json({ error: '请提供描述' }, { status: 400 })
@@ -34,10 +39,6 @@ async function geminiHandler(request: NextRequest) {
     if (!apiKey) {
       return NextResponse.json({ error: 'API配置缺失，请在页面右上角配置 API 密钥' }, { status: 500 })
     }
-
-    console.log('Gemini 使用 API URL:', apiUrl)
-    console.log('使用模型:', model)
-    console.log('MAYNOR 协议模式:', protocol)
 
     // 构建请求内容 - 根据maynor API文档格式
     const parts: any[] = []
@@ -66,7 +67,7 @@ async function geminiHandler(request: NextRequest) {
       })
     } else {
       // 纯文生图模式
-      parts.push({ text: `Create a picture: ${prompt}` })
+      parts.push({ text: prompt })
     }
 
     // 构建OpenAI兼容格式的消息
@@ -91,54 +92,71 @@ async function geminiHandler(request: NextRequest) {
         image_url: { url: `data:image/jpeg;base64,${imageData}` }
       })
     } else {
-      messages[0].content.push({ type: "text", text: `Create a picture: ${prompt}` })
+      messages[0].content.push({ type: "text", text: prompt })
     }
 
     // 根据是否有图片选择合适的API格式
     let response: Response
     const useStandardProtocol = shouldUseMaynorStandardProtocol(protocol, hasImageInput)
-    
-    if (!useStandardProtocol) {
+
+    if (shouldUseGrsaiImageProtocol(apiUrl)) {
+      const upstreamRequest = buildGrsaiImageRequest({
+        apiKey,
+        apiUrl,
+        model,
+        prompt,
+        imageDataArray: normalizeGrsaiImages(imageData, imageDataArray),
+        size
+      })
+
+      response = await fetch(upstreamRequest.url, {
+        method: upstreamRequest.method,
+        headers: upstreamRequest.headers,
+        body: upstreamRequest.body
+      })
+    } else if (!useStandardProtocol) {
+      const upstreamUrl = `${apiUrl}/v1beta/models/${model}:generateContent`
+      const upstreamHeaders = {
+        'Content-Type': 'application/json',
+        'x-goog-api-key': apiKey
+      }
+      const upstreamBody = {
+        contents: [{
+          role: 'user',
+          parts: parts
+        }],
+        generationConfig: {
+          responseModalities: ['TEXT', 'IMAGE'],
+          temperature: 0.7,
+          maxOutputTokens: 1000
+        }
+      }
+
       // 图片编辑使用 Gemini 原生格式
-      response = await fetch(
-        `${apiUrl}/v1beta/models/${model}:generateContent`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-goog-api-key': apiKey
-          },
-          body: JSON.stringify({
-            contents: [{
-              role: "user",
-              parts: parts
-            }],
-            generationConfig: {
-              responseModalities: ["TEXT", "IMAGE"],
-              temperature: 0.7,
-              maxOutputTokens: 1000
-            }
-          })
-        }
-      )
+      response = await fetch(upstreamUrl, {
+        method: 'POST',
+        headers: upstreamHeaders,
+        body: JSON.stringify(upstreamBody)
+      })
     } else {
+      const upstreamUrl = `${apiUrl}/v1/chat/completions`
+      const upstreamHeaders = {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      }
+      const upstreamBody = {
+        model: model,
+        messages: messages,
+        temperature: 0.7,
+        max_tokens: 4096
+      }
+
       // 标准协议模式统一使用 OpenAI 兼容格式
-      response = await fetch(
-        `${apiUrl}/v1/chat/completions`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${apiKey}`
-          },
-          body: JSON.stringify({
-            model: model,
-            messages: messages,
-            temperature: 0.7,
-            max_tokens: 4096
-          })
-        }
-      )
+      response = await fetch(upstreamUrl, {
+        method: 'POST',
+        headers: upstreamHeaders,
+        body: JSON.stringify(upstreamBody)
+      })
     }
 
     if (!response.ok) {
@@ -151,7 +169,10 @@ async function geminiHandler(request: NextRequest) {
     }
 
     const data = await response.json()
-    console.log('Gemini API响应:', JSON.stringify(data, null, 2))
+
+    if (shouldUseGrsaiImageProtocol(apiUrl)) {
+      return NextResponse.json(parseGrsaiImageResponse(data))
+    }
     
     // 根据请求类型解析不同格式的响应
     if (!useStandardProtocol && hasImageInput) {
@@ -229,6 +250,23 @@ async function geminiHandler(request: NextRequest) {
       { status: 500 }
     )
   }
+}
+
+/**
+ * 整理 Grsai 图片输入数组
+ * @param imageData 单张图片 base64
+ * @param imageDataArray 多张图片 base64
+ * @returns 图片数组
+ */
+function normalizeGrsaiImages(
+  imageData?: string,
+  imageDataArray?: string[]
+): string[] {
+  if (Array.isArray(imageDataArray) && imageDataArray.length > 0) {
+    return imageDataArray
+  }
+
+  return imageData ? [imageData] : []
 }
 
 /**

@@ -29,8 +29,6 @@ async function doubaoHandler(request: NextRequest) {
       return NextResponse.json({ error: 'Doubao API配置缺失，请在页面右上角配置 API 密钥' }, { status: 500 })
     }
 
-    console.log('Doubao 使用 API URL:', apiUrl)
-
     // 构建 doubao API 请求体
     const requestBody: any = {
       model: 'doubao-seedream-4-0-250828',

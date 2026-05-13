@@ -88,6 +88,9 @@ export function detectApiErrorCodeFromException(error: unknown): ApiErrorCode {
   if (message.includes('fetch')) {
     return 'NETWORK'
   }
+  if (message.includes('generate failed') || message.includes('图片生成失败')) {
+    return 'UNAVAILABLE'
+  }
 
   return 'UNKNOWN'
 }
