@@ -1,8 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
+import {
+  createApiErrorResponse,
+  detectApiErrorCode,
+  detectApiErrorCodeFromException
+} from '@/app/lib/api-error'
+import { getMaynorApiConfig } from '@/app/lib/maynor-api'
 
 export const runtime = 'nodejs'
 export const maxDuration = 60
 
+/**
+ * 处理 Gemini 文生图生成请求
+ * @param request Next.js 请求对象
+ * @returns 统一格式的文生图结果
+ */
 async function generateHandler(request: NextRequest) {
   try {
     const { prompt, apiKey: customApiKey, apiUrl: customApiUrl, model: customModel } = await request.json()
@@ -12,8 +23,7 @@ async function generateHandler(request: NextRequest) {
     }
 
     // 优先使用前端传来的自定义配置，否则使用环境变量
-    const apiKey = customApiKey || process.env.MAYNOR_API_KEY
-    const apiUrl = customApiUrl || process.env.MAYNOR_API_URL || 'https://apipro.maynor1024.live'
+    const { apiKey, apiUrl } = getMaynorApiConfig(customApiKey, customApiUrl)
 
     if (!apiKey) {
       return NextResponse.json({ error: 'API配置缺失，请在页面右上角配置 API 密钥' }, { status: 500 })
@@ -58,10 +68,10 @@ async function generateHandler(request: NextRequest) {
     if (!response.ok) {
       const errorData = await response.json()
       console.error('API错误:', errorData)
-      return NextResponse.json({ 
-        error: errorData.error?.message || '生成失败',
-        details: errorData 
-      }, { status: response.status })
+      return NextResponse.json(
+        createApiErrorResponse(detectApiErrorCode(errorData, response.status), response.status),
+        { status: response.status }
+      )
     }
 
     const data = await response.json()
@@ -127,33 +137,22 @@ async function generateHandler(request: NextRequest) {
     }
 
     return NextResponse.json({ 
-      error: '未能从响应中提取内容',
-      raw_response: data 
+      ...createApiErrorResponse('UNAVAILABLE', 500)
     }, { status: 500 })
   } catch (error) {
     console.error('生成错误:', error)
-    
-    // 更详细的错误信息
-    let errorMessage = '生成失败'
-    let errorDetails = '未知错误'
-    
-    if (error instanceof Error) {
-      errorDetails = error.message
-      if (error.message.includes('fetch')) {
-        errorMessage = 'API连接失败，请稍后重试'
-      } else if (error.message.includes('timeout')) {
-        errorMessage = '请求超时，请使用简短描述重试'
-      }
-    }
-    
-    return NextResponse.json({
-      error: errorMessage,
-      details: errorDetails,
-      timestamp: new Date().toISOString()
-    }, { status: 500 })
+    return NextResponse.json(
+      createApiErrorResponse(detectApiErrorCodeFromException(error), 500),
+      { status: 500 }
+    )
   }
 }
 
+/**
+ * 处理 generate 路由的 POST 请求
+ * @param request Next.js 请求对象
+ * @returns generate 路由处理结果
+ */
 export async function POST(request: NextRequest) {
   return generateHandler(request)
 }

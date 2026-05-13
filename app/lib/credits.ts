@@ -26,12 +26,12 @@ const USER_LEVELS = {
   },
   pro: {
     maxImages: 4,
-    apiKey: process.env.GEMINI_PRO_API_KEY || 'sk-2DYwd1hrA6ycqTu8RHlTsTBBBSFRdIVarkGQsjGWLttyNWua',
+    apiKey: process.env.GEMINI_PRO_API_KEY || process.env.GEMINI_API_KEY,
     priority: 'high'
   },
   unlimited: {
     maxImages: 10,
-    apiKey: process.env.GEMINI_PRO_API_KEY || 'sk-2DYwd1hrA6ycqTu8RHlTsTBBBSFRdIVarkGQsjGWLttyNWua',
+    apiKey: process.env.GEMINI_PRO_API_KEY || process.env.GEMINI_API_KEY,
     priority: 'highest'
   }
 }

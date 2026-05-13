@@ -1,8 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server'
+import {
+  createApiErrorResponse,
+  detectApiErrorCode,
+  detectApiErrorCodeFromException
+} from '@/app/lib/api-error'
+import {
+  getMaynorApiConfig,
+  shouldUseMaynorStandardProtocol
+} from '@/app/lib/maynor-api'
 
 export const runtime = 'nodejs'
 export const maxDuration = 60
 
+/**
+ * 处理 Gemini / 第三方 MAYNOR 网关图片请求
+ * @param request Next.js 请求对象
+ * @returns 统一格式的图片生成结果
+ */
 async function geminiHandler(request: NextRequest) {
   try {
     const { prompt, imageData, imageDataArray, apiKey: customApiKey, apiUrl: customApiUrl, model: customModel } = await request.json()
@@ -12,8 +26,7 @@ async function geminiHandler(request: NextRequest) {
     }
 
     // 优先使用前端传来的自定义配置，否则使用环境变量
-    const apiKey = customApiKey || process.env.GEMINI_API_KEY || process.env.MAYNOR_API_KEY
-    const apiUrl = customApiUrl || process.env.MAYNOR_API_URL || 'https://apipro.maynor1024.live'
+    const { apiKey, apiUrl, protocol } = getMaynorApiConfig(customApiKey, customApiUrl)
 
     // 模型映射：将前端模型名映射到实际的API模型名
     const modelMap: { [key: string]: string } = {
@@ -31,9 +44,11 @@ async function geminiHandler(request: NextRequest) {
 
     console.log('Gemini 使用 API URL:', apiUrl)
     console.log('使用模型:', model)
+    console.log('MAYNOR 协议模式:', protocol)
 
     // 构建请求内容 - 根据maynor API文档格式
     const parts: any[] = []
+    const hasImageInput = Boolean(imageData || (imageDataArray && imageDataArray.length > 0))
 
     // 处理多图片输入
     if (imageDataArray && Array.isArray(imageDataArray) && imageDataArray.length > 0) {
@@ -88,8 +103,9 @@ async function geminiHandler(request: NextRequest) {
 
     // 根据是否有图片选择合适的API格式
     let response: Response
+    const useStandardProtocol = shouldUseMaynorStandardProtocol(protocol, hasImageInput)
     
-    if (imageData || (imageDataArray && imageDataArray.length > 0)) {
+    if (!useStandardProtocol) {
       // 图片编辑使用 Gemini 原生格式
       response = await fetch(
         `${apiUrl}/v1beta/models/${model}:generateContent`,
@@ -113,7 +129,7 @@ async function geminiHandler(request: NextRequest) {
         }
       )
     } else {
-      // 文生图使用 OpenAI 兼容格式
+      // 标准协议模式统一使用 OpenAI 兼容格式
       response = await fetch(
         `${apiUrl}/v1/chat/completions`,
         {
@@ -135,17 +151,17 @@ async function geminiHandler(request: NextRequest) {
     if (!response.ok) {
       const errorData = await response.json()
       console.error('API错误:', errorData)
-      return NextResponse.json({ 
-        error: errorData.error?.message || '生成失败',
-        details: errorData 
-      }, { status: response.status })
+      return NextResponse.json(
+        createApiErrorResponse(detectApiErrorCode(errorData, response.status), response.status),
+        { status: response.status }
+      )
     }
 
     const data = await response.json()
     console.log('Gemini API响应:', JSON.stringify(data, null, 2))
     
     // 根据请求类型解析不同格式的响应
-    if (imageData || (imageDataArray && imageDataArray.length > 0)) {
+    if (!useStandardProtocol && hasImageInput) {
       // 解析 Gemini 原生格式响应
       if (data.candidates && data.candidates[0] && data.candidates[0].content) {
         const content = data.candidates[0].content
@@ -211,18 +227,22 @@ async function geminiHandler(request: NextRequest) {
     }
 
     return NextResponse.json({ 
-      error: '未能从响应中提取内容',
-      raw_response: data 
+      ...createApiErrorResponse('UNAVAILABLE', 500)
     }, { status: 500 })
   } catch (error) {
     console.error('生成错误:', error)
-    return NextResponse.json({
-      error: '生成失败',
-      details: error instanceof Error ? error.message : '未知错误'
-    }, { status: 500 })
+    return NextResponse.json(
+      createApiErrorResponse(detectApiErrorCodeFromException(error), 500),
+      { status: 500 }
+    )
   }
 }
 
+/**
+ * 处理 Gemini 路由的 POST 请求
+ * @param request Next.js 请求对象
+ * @returns Gemini 路由处理结果
+ */
 export async function POST(request: NextRequest) {
   return geminiHandler(request)
 }

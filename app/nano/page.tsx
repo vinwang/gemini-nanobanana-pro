@@ -10,7 +10,7 @@ import { loadApiConfig, saveApiConfig, type ApiConfig } from '../lib/api-config'
 
 type Mode = 'upload' | 'text'
 type Style = 'none' | 'enhance' | 'artistic' | 'anime' | 'photo'
-type Model = 'gemini-3-pro-image-preview' | 'gemini' | 'doubao'
+type Model = 'gemini-3-pro-image-preview' | 'gemini' | 'openai' | 'doubao'
 
 export default function NanoPage() {
   const { language, setLanguage, t } = useLanguage()
@@ -54,6 +54,45 @@ export default function NanoPage() {
     { icon: '🔧', text: '智能修复', value: '修复图片中的瑕疵和噪点，优化整体视觉效果' },
     { icon: '👗', text: '穿搭分析', value: '分析图片中的服装搭配，在原图基础上添加标注和建议' },
     { icon: '🔍', text: '详细分析', value: '在原图基础上添加详细的标注说明，分析图片内容和关键元素' }
+  ]
+
+  const showcaseSections = [
+    {
+      title: '时光档案',
+      subtitle: '复古胶片、年代海报、记忆修复与叙事感画面',
+      prompts: [
+        '1980年代街头肖像，胶片颗粒，暖黄路灯，纪实构图',
+        '老照片修复成高质感彩色人像，保持年代氛围',
+        '90年代校园宣传海报，中文标题，出版级排版'
+      ]
+    },
+    {
+      title: '高密度文字设计',
+      subtitle: '杂志封面、展览主视觉、品牌排版与海报语言',
+      prompts: [
+        '先锋时尚杂志封面，黑白主图，大字号中文标题',
+        '科技发布会海报，极简网格排版，橙色强调信息',
+        '咖啡品牌菜单页，留白克制，细节精致'
+      ]
+    },
+    {
+      title: 'UI 与产品界面',
+      subtitle: '高保真工作台、App 截图、运营看板与交互界面',
+      prompts: [
+        '深色模式 AI 图片工作台，简洁控件，专业产品截图',
+        '电商数据分析后台，橙色状态标签，克制布局',
+        '移动端拍照修图 App 首页，现代玻璃质感'
+      ]
+    },
+    {
+      title: '超写实场景',
+      subtitle: '人物、产品、梗图与社交传播感强的高逼真画面',
+      prompts: [
+        '戴墨镜的柴犬坐在复古敞篷车里，夏日广告质感',
+        '护肤品微距海报，水珠细节，棚拍灯光',
+        '都市女性街拍，电影感逆光，真实肤质'
+      ]
+    }
   ]
 
   // 页面加载时检查是否需要显示额度耗尽弹窗（首次访问）
@@ -303,6 +342,8 @@ export default function NanoPage() {
       let apiEndpoint = '/api/gemini'
       if (model === 'doubao') {
         apiEndpoint = '/api/doubao'
+      } else if (model === 'openai') {
+        apiEndpoint = '/api/openai-image'
       } else if (model === 'gemini' && mode === 'text') {
         apiEndpoint = '/api/generate'
       } else if (model === 'gemini-3-pro-image-preview') {
@@ -321,6 +362,8 @@ export default function NanoPage() {
       // 如果是豆包模型，添加尺寸参数
       if (model === 'doubao') {
         requestData.size = imageSize
+      } else if (model === 'openai' && mode === 'text') {
+        requestData.size = mapImageSizeToOpenAi(imageSize)
       }
 
       // 使用时间戳作为用户标识
@@ -338,6 +381,14 @@ export default function NanoPage() {
         if (model === 'gemini-3-pro-image-preview') {
           requestData.model = 'gemini-3-pro-image-preview'
         }
+      } else if (model === 'openai') {
+        if (apiConfig.openaiApiKey) {
+          requestData.apiKey = apiConfig.openaiApiKey
+        }
+        if (shouldSendOpenAiUrl(apiConfig.openaiApiUrl, apiConfig.openaiApiKey)) {
+          requestData.apiUrl = apiConfig.openaiApiUrl
+        }
+        requestData.model = 'gpt-image-2'
       } else if (model === 'doubao') {
         if (apiConfig.doubaoApiKey) {
           requestData.apiKey = apiConfig.doubaoApiKey
@@ -431,10 +482,47 @@ export default function NanoPage() {
         return language === 'zh' ? 'NanoBanana2 (Gemini 3 Pro)' : 'NanoBanana2 (Gemini 3 Pro)'
       case 'gemini':
         return language === 'zh' ? 'Gemini 2.5 Flash' : 'Gemini 2.5 Flash'
+      case 'openai':
+        return language === 'zh' ? 'OpenAI GPT Image 2' : 'OpenAI GPT Image 2'
       case 'doubao':
         return language === 'zh' ? '豆包模型(待开发)' : 'Doubao Model (Coming Soon)'
       default:
         return model
+    }
+  }
+
+  /**
+   * 判断是否需要把 OpenAI URL 作为前端覆盖配置发送给后端
+   * @param apiUrl 当前表单中的 OpenAI URL
+   * @param apiKey 当前表单中的 OpenAI Key
+   * @returns 是否发送 URL 覆盖值
+   */
+  const shouldSendOpenAiUrl = (apiUrl: string, apiKey: string): boolean => {
+    const normalizedUrl = apiUrl.trim()
+    if (!normalizedUrl) {
+      return false
+    }
+
+    if (normalizedUrl !== 'https://api.chatfire.site') {
+      return true
+    }
+
+    return Boolean(apiKey.trim())
+  }
+
+  /**
+   * 将页面尺寸选项映射为 OpenAI 图片接口支持的尺寸
+   * @param size 页面上的尺寸值
+   * @returns OpenAI 图片接口可接受的尺寸字符串
+   */
+  const mapImageSizeToOpenAi = (size: string): string => {
+    switch (size) {
+      case '2k':
+        return '1536x1024'
+      case '4k':
+        return '1024x1536'
+      default:
+        return '1024x1024'
     }
   }
 
@@ -483,64 +571,94 @@ export default function NanoPage() {
 
   return (
     <div style={{ 
-      minHeight: '100vh', 
-      backgroundColor: '#0a0a0a',
+      minHeight: '100vh',
+      background: 'radial-gradient(circle at top, rgba(245, 158, 11, 0.16), transparent 28%), linear-gradient(180deg, #090909 0%, #0d0d0d 42%, #121212 100%)',
       color: '#ffffff',
-      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+      fontFamily: '"Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif'
     }}>
       {/* 浏览器兼容性警告 */}
       <BrowserWarning />
       {/* Header */}
       <header style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '1rem 2rem',
-        borderBottom: '1px solid #1a1a1a'
+        position: 'sticky',
+        top: 0,
+        zIndex: 20,
+        backdropFilter: 'blur(18px)',
+        backgroundColor: 'rgba(9, 9, 9, 0.78)',
+        borderBottom: '1px solid rgba(255,255,255,0.06)'
       }}>
         <div style={{
+          maxWidth: '1280px',
+          margin: '0 auto',
+          padding: '0.9rem 1.2rem',
           display: 'flex',
           alignItems: 'center',
+          justifyContent: 'space-between',
           gap: '1rem',
-          marginBottom: '0.5rem',
-          width: '100%',
-          justifyContent: 'center'
+          flexWrap: 'wrap'
         }}>
-          <h1 style={{
-            fontSize: '2.5rem',
-            fontWeight: 'bold',
-            background: 'linear-gradient(135deg, #10b981, #00a3ff)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text',
-            margin: 0,
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem'
-          }}>
-            {t.header.title}
-          </h1>
-
-          {/* Language Switcher */}
           <div style={{
             display: 'flex',
-            gap: '0.5rem',
-            backgroundColor: '#1a1a1a',
-            padding: '0.5rem',
-            borderRadius: '0.5rem',
-            border: '1px solid #333'
+            alignItems: 'center',
+            gap: '0.9rem'
           }}>
+            <div style={{
+              width: '2.6rem',
+              height: '2.6rem',
+              borderRadius: '0.85rem',
+              background: 'linear-gradient(135deg, #f59e0b, #fb7185)',
+              display: 'grid',
+              placeItems: 'center',
+              boxShadow: '0 10px 30px rgba(245, 158, 11, 0.32)'
+            }}>
+              <span style={{ fontSize: '1.2rem' }}>🍌</span>
+            </div>
+            <div>
+              <p style={{
+                margin: 0,
+                fontSize: '0.74rem',
+                letterSpacing: '0.22em',
+                color: '#fbbf24',
+                textTransform: 'uppercase'
+              }}>
+                AIGC STUDIO
+              </p>
+              <h1 style={{
+                margin: '0.2rem 0 0',
+                fontSize: '1.15rem',
+                fontWeight: 700,
+                letterSpacing: '0.03em'
+              }}>
+                Nano Banana
+              </h1>
+            </div>
+          </div>
+
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.75rem',
+            flexWrap: 'wrap'
+          }}>
+            <div style={{
+              display: 'flex',
+              gap: '0.35rem',
+              backgroundColor: 'rgba(255,255,255,0.04)',
+              padding: '0.25rem',
+              borderRadius: '999px',
+              border: '1px solid rgba(255,255,255,0.08)'
+            }}>
             <button
               onClick={() => setLanguage('zh')}
               style={{
-                padding: '0.25rem 0.75rem',
-                backgroundColor: language === 'zh' ? '#10b981' : 'transparent',
-                color: language === 'zh' ? 'white' : '#888',
+                padding: '0.42rem 0.8rem',
+                backgroundColor: language === 'zh' ? '#f59e0b' : 'transparent',
+                color: language === 'zh' ? '#111' : '#9ca3af',
                 border: 'none',
-                borderRadius: '0.25rem',
+                borderRadius: '999px',
                 cursor: 'pointer',
-                fontSize: '0.9rem',
+                fontSize: '0.82rem',
+                fontWeight: 600,
                 transition: 'all 0.3s ease'
               }}
             >
@@ -549,13 +667,14 @@ export default function NanoPage() {
             <button
               onClick={() => setLanguage('en')}
               style={{
-                padding: '0.25rem 0.75rem',
-                backgroundColor: language === 'en' ? '#10b981' : 'transparent',
-                color: language === 'en' ? 'white' : '#888',
+                padding: '0.42rem 0.8rem',
+                backgroundColor: language === 'en' ? '#f59e0b' : 'transparent',
+                color: language === 'en' ? '#111' : '#9ca3af',
                 border: 'none',
-                borderRadius: '0.25rem',
+                borderRadius: '999px',
                 cursor: 'pointer',
-                fontSize: '0.9rem',
+                fontSize: '0.82rem',
+                fontWeight: 600,
                 transition: 'all 0.3s ease'
               }}
             >
@@ -563,96 +682,122 @@ export default function NanoPage() {
             </button>
           </div>
 
-          {/* API Config Button */}
           <button
             onClick={() => setShowApiConfig(true)}
             style={{
-              padding: '0.5rem 1rem',
-              backgroundColor: '#1a1a1a',
-              color: '#888',
-              border: '1px solid #333',
-              borderRadius: '0.5rem',
+              padding: '0.55rem 1rem',
+              backgroundColor: 'rgba(255,255,255,0.04)',
+              color: '#e5e7eb',
+              border: '1px solid rgba(255,255,255,0.08)',
+              borderRadius: '999px',
               cursor: 'pointer',
-              fontSize: '0.9rem',
+              fontSize: '0.85rem',
+              fontWeight: 600,
               transition: 'all 0.3s ease',
               display: 'flex',
               alignItems: 'center',
               gap: '0.5rem'
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.borderColor = '#10b981'
-              e.currentTarget.style.color = '#10b981'
+              e.currentTarget.style.borderColor = '#f59e0b'
+              e.currentTarget.style.color = '#fbbf24'
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = '#333'
-              e.currentTarget.style.color = '#888'
+              e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'
+              e.currentTarget.style.color = '#e5e7eb'
             }}
           >
             ⚙️ API配置
           </button>
         </div>
-
-        {/* Subtitle Features */}
-        <div style={{
-          display: 'flex',
-          gap: '1.5rem',
-          fontSize: '0.9rem',
-          color: '#888',
-          marginTop: '0.5rem',
-          flexWrap: 'wrap',
-          justifyContent: 'center'
-        }}>
-          <span style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.25rem',
-            color: '#10b981',
-            fontWeight: '500'
-          }}>
-            ✨ {t.header.subtitle}
-          </span>
-          <span style={{ color: '#666' }}>•</span>
-          <span>{t.header.poweredBy}</span>
-          <span style={{ color: '#666' }}>•</span>
-          <span>{t.header.noLogin}</span>
-          <span style={{ color: '#666' }}>•</span>
-          <span>{t.header.unlimited}</span>
         </div>
       </header>
 
+      <main style={{ maxWidth: '1280px', margin: '0 auto', padding: '2rem 1.2rem 4rem' }}>
+      <section style={{
+        textAlign: 'center',
+        margin: '0 auto 1.5rem',
+        maxWidth: '780px'
+      }}>
+        <div style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '0.45rem',
+          padding: '0.35rem 0.8rem',
+          borderRadius: '999px',
+          backgroundColor: 'rgba(255,255,255,0.04)',
+          border: '1px solid rgba(255,255,255,0.07)',
+          color: '#fbbf24',
+          fontSize: '0.8rem',
+          letterSpacing: '0.06em',
+          textTransform: 'uppercase'
+        }}>
+          <span>Images Workflow</span>
+          <span style={{ color: '#6b7280' }}>•</span>
+          <span>{mode === 'text' ? 'Text to Image' : 'Image Editing'}</span>
+        </div>
+        <h2 style={{
+          margin: '1rem 0 0.8rem',
+          fontSize: 'clamp(2.6rem, 8vw, 5.2rem)',
+          lineHeight: 0.95,
+          letterSpacing: '-0.05em',
+          fontWeight: 800
+        }}>
+          生成一张
+          <span style={{
+            display: 'block',
+            background: 'linear-gradient(135deg, #f8fafc, #f59e0b 56%, #fb7185 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text'
+          }}>
+            更像作品的图片
+          </span>
+        </h2>
+        <p style={{
+          margin: '0 auto',
+          maxWidth: '620px',
+          color: '#9ca3af',
+          fontSize: '1rem',
+          lineHeight: 1.7
+        }}>
+          参考图库级工作流重构。把模型、比例、尺寸和输入动作压缩到一个工作台里，让生成、编辑和试错都更快。
+        </p>
+      </section>
+
       {/* Mode Selector */}
-      <div className="mode-selector" style={{ display: 'flex', gap: '1rem', padding: '2rem', justifyContent: 'center' }}>
+      <div className="mode-selector" style={{ display: 'flex', gap: '0.75rem', padding: '0 0 1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
         <button
           className="mode-button"
           onClick={() => setMode('upload')}
           style={{
-            flex: 1,
-            maxWidth: '400px',
-            padding: '1rem 2rem',
+            minWidth: '220px',
+            padding: '0.9rem 1.3rem',
             background: mode === 'upload'
-              ? 'linear-gradient(135deg, #10b981, #059669)'
-              : 'transparent',
-            border: mode === 'upload' ? 'none' : '1px solid #10b981',
-            color: mode === 'upload' ? 'white' : '#10b981',
-            borderRadius: '0.75rem',
+              ? 'linear-gradient(135deg, #f59e0b, #ea580c)'
+              : 'rgba(255,255,255,0.03)',
+            border: mode === 'upload' ? 'none' : '1px solid rgba(255,255,255,0.08)',
+            color: 'white',
+            borderRadius: '999px',
             cursor: 'pointer',
-            fontSize: '1rem',
+            fontSize: '0.96rem',
+            fontWeight: 600,
             transition: 'all 0.3s ease',
             boxShadow: mode === 'upload'
-              ? '0 8px 25px rgba(16, 185, 129, 0.3)'
+              ? '0 12px 32px rgba(245, 158, 11, 0.28)'
               : 'none',
             transform: mode === 'upload' ? 'translateY(-2px)' : 'none'
           }}
           onMouseEnter={(e) => {
             if (mode !== 'upload') {
-              e.currentTarget.style.backgroundColor = 'rgba(16, 185, 129, 0.1)'
+              e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.06)'
               e.currentTarget.style.transform = 'translateY(-2px)'
-              e.currentTarget.style.boxShadow = '0 4px 15px rgba(16, 185, 129, 0.2)'
+              e.currentTarget.style.boxShadow = '0 10px 28px rgba(0, 0, 0, 0.18)'
             }
           }}
           onMouseLeave={(e) => {
             if (mode !== 'upload') {
-              e.currentTarget.style.backgroundColor = 'transparent'
+              e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.03)'
               e.currentTarget.style.transform = 'none'
               e.currentTarget.style.boxShadow = 'none'
             }
@@ -664,33 +809,33 @@ export default function NanoPage() {
           className="mode-button"
           onClick={() => setMode('text')}
           style={{
-            flex: 1,
-            maxWidth: '400px',
-            padding: '1rem 2rem',
+            minWidth: '220px',
+            padding: '0.9rem 1.3rem',
             background: mode === 'text'
-              ? 'linear-gradient(135deg, #10b981, #059669)'
-              : 'transparent',
-            border: mode === 'text' ? 'none' : '1px solid #10b981',
-            color: mode === 'text' ? 'white' : '#10b981',
-            borderRadius: '0.75rem',
+              ? 'linear-gradient(135deg, #f59e0b, #ea580c)'
+              : 'rgba(255,255,255,0.03)',
+            border: mode === 'text' ? 'none' : '1px solid rgba(255,255,255,0.08)',
+            color: 'white',
+            borderRadius: '999px',
             cursor: 'pointer',
-            fontSize: '1rem',
+            fontSize: '0.96rem',
+            fontWeight: 600,
             transition: 'all 0.3s ease',
             boxShadow: mode === 'text'
-              ? '0 8px 25px rgba(16, 185, 129, 0.3)'
+              ? '0 12px 32px rgba(245, 158, 11, 0.28)'
               : 'none',
             transform: mode === 'text' ? 'translateY(-2px)' : 'none'
           }}
           onMouseEnter={(e) => {
             if (mode !== 'text') {
-              e.currentTarget.style.backgroundColor = 'rgba(16, 185, 129, 0.1)'
+              e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.06)'
               e.currentTarget.style.transform = 'translateY(-2px)'
-              e.currentTarget.style.boxShadow = '0 4px 15px rgba(16, 185, 129, 0.2)'
+              e.currentTarget.style.boxShadow = '0 10px 28px rgba(0, 0, 0, 0.18)'
             }
           }}
           onMouseLeave={(e) => {
             if (mode !== 'text') {
-              e.currentTarget.style.backgroundColor = 'transparent'
+              e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.03)'
               e.currentTarget.style.transform = 'none'
               e.currentTarget.style.boxShadow = 'none'
             }
@@ -701,25 +846,35 @@ export default function NanoPage() {
       </div>
 
 
+      <section style={{
+        maxWidth: '1040px',
+        margin: '0 auto',
+        borderRadius: '2rem',
+        background: 'linear-gradient(180deg, rgba(255,255,255,0.035), rgba(255,255,255,0.02))',
+        border: '1px solid rgba(255,255,255,0.07)',
+        boxShadow: '0 26px 80px rgba(0,0,0,0.34)',
+        overflow: 'hidden'
+      }}>
       {/* Model Selector */}
-      <div className="model-selector" style={{ display: 'flex', gap: '1rem', padding: '0 2rem 2rem', justifyContent: 'center' }}>
-        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-          <span style={{ color: '#888', fontSize: '0.9rem' }}>{t.model.label}</span>
+      <div className="model-selector" style={{ display: 'flex', gap: '0.85rem', padding: '1.1rem 1.2rem 0.85rem', justifyContent: 'space-between', flexWrap: 'wrap', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+          <span style={{ color: '#9ca3af', fontSize: '0.86rem', minWidth: 'fit-content' }}>{t.model.label}</span>
           <button
             onClick={() => setModel('gemini-3-pro-image-preview')}
             style={{
-              padding: '0.5rem 1rem',
+              padding: '0.55rem 0.95rem',
               background: model === 'gemini-3-pro-image-preview'
-                ? 'linear-gradient(135deg, #10b981, #059669)'
-                : 'transparent',
-              border: model === 'gemini-3-pro-image-preview' ? 'none' : '1px solid #10b981',
-              color: model === 'gemini-3-pro-image-preview' ? 'white' : '#10b981',
-              borderRadius: '0.5rem',
+                ? 'linear-gradient(135deg, #f59e0b, #ea580c)'
+                : 'rgba(255,255,255,0.03)',
+              border: model === 'gemini-3-pro-image-preview' ? 'none' : '1px solid rgba(255,255,255,0.08)',
+              color: 'white',
+              borderRadius: '999px',
               cursor: 'pointer',
-              fontSize: '0.9rem',
+              fontSize: '0.84rem',
+              fontWeight: 600,
               transition: 'all 0.3s ease',
               boxShadow: model === 'gemini-3-pro-image-preview'
-                ? '0 4px 15px rgba(16, 185, 129, 0.3)'
+                ? '0 8px 22px rgba(245, 158, 11, 0.24)'
                 : 'none'
             }}
           >
@@ -728,35 +883,58 @@ export default function NanoPage() {
           <button
             onClick={() => setModel('gemini')}
             style={{
-              padding: '0.5rem 1rem',
+              padding: '0.55rem 0.95rem',
               background: model === 'gemini'
-                ? 'linear-gradient(135deg, #6366f1, #4f46e5)'
-                : 'transparent',
-              border: model === 'gemini' ? 'none' : '1px solid #6366f1',
-              color: model === 'gemini' ? 'white' : '#6366f1',
-              borderRadius: '0.5rem',
+                ? 'linear-gradient(135deg, #4f46e5, #7c3aed)'
+                : 'rgba(255,255,255,0.03)',
+              border: model === 'gemini' ? 'none' : '1px solid rgba(255,255,255,0.08)',
+              color: 'white',
+              borderRadius: '999px',
               cursor: 'pointer',
-              fontSize: '0.9rem',
+              fontSize: '0.84rem',
+              fontWeight: 600,
               transition: 'all 0.3s ease',
               boxShadow: model === 'gemini'
-                ? '0 4px 15px rgba(99, 102, 241, 0.3)'
+                ? '0 8px 22px rgba(79, 70, 229, 0.26)'
                 : 'none'
             }}
           >
             {t.model.gemini}
           </button>
           <button
+            onClick={() => setModel('openai')}
+            style={{
+              padding: '0.55rem 0.95rem',
+              background: model === 'openai'
+                ? 'linear-gradient(135deg, #fb7185, #f97316)'
+                : 'rgba(255,255,255,0.03)',
+              border: model === 'openai' ? 'none' : '1px solid rgba(255,255,255,0.08)',
+              color: 'white',
+              borderRadius: '999px',
+              cursor: 'pointer',
+              fontSize: '0.84rem',
+              fontWeight: 600,
+              transition: 'all 0.3s ease',
+              boxShadow: model === 'openai'
+                ? '0 8px 22px rgba(249, 115, 22, 0.24)'
+                : 'none'
+            }}
+          >
+            {t.model.openai}
+          </button>
+          <button
             onClick={() => {
               showError(t.model.doubao.replace('🚧 ', ''), t.model.doubaoTip)
             }}
             style={{
-              padding: '0.5rem 1rem',
-              background: '#666',
-              border: '1px solid #555',
-              color: '#ccc',
-              borderRadius: '0.5rem',
+              padding: '0.55rem 0.95rem',
+              background: 'rgba(255,255,255,0.02)',
+              border: '1px solid rgba(255,255,255,0.06)',
+              color: '#6b7280',
+              borderRadius: '999px',
               cursor: 'not-allowed',
-              fontSize: '0.9rem',
+              fontSize: '0.84rem',
+              fontWeight: 600,
               transition: 'all 0.3s ease',
               opacity: 0.6
             }}
@@ -766,24 +944,25 @@ export default function NanoPage() {
           </button>
         </div>
         
-        {/* Size Selector for Doubao */}
-        {model === 'doubao' && (
-          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-            <span style={{ color: '#888', fontSize: '0.9rem' }}>{t.model.size}</span>
+        {/* Size Selector for image APIs */}
+        {(model === 'doubao' || model === 'openai') && (
+          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+            <span style={{ color: '#9ca3af', fontSize: '0.84rem' }}>{t.model.size}</span>
             {['1k', '2k', '4k'].map((size) => (
               <button
                 key={size}
                 onClick={() => setImageSize(size)}
                 style={{
-                  padding: '0.4rem 0.8rem',
+                  padding: '0.45rem 0.78rem',
                   background: imageSize === size
                     ? 'linear-gradient(135deg, #f59e0b, #d97706)'
-                    : 'transparent',
-                  border: imageSize === size ? 'none' : '1px solid #f59e0b',
-                  color: imageSize === size ? 'white' : '#f59e0b',
-                  borderRadius: '0.4rem',
+                    : 'rgba(255,255,255,0.03)',
+                  border: imageSize === size ? 'none' : '1px solid rgba(255,255,255,0.08)',
+                  color: 'white',
+                  borderRadius: '999px',
                   cursor: 'pointer',
                   fontSize: '0.8rem',
+                  fontWeight: 600,
                   transition: 'all 0.3s ease',
                   boxShadow: imageSize === size
                     ? '0 2px 8px rgba(245, 158, 11, 0.3)'
@@ -798,7 +977,7 @@ export default function NanoPage() {
       </div>
 
       {/* Main Content */}
-      <div className="main-content" style={{ display: 'flex', gap: '2rem', padding: '0 2rem 2rem', maxWidth: '1400px', margin: '0 auto' }}>
+      <div className="main-content" style={{ display: 'flex', gap: '1.4rem', padding: '0 1.2rem 1.2rem', maxWidth: '1400px', margin: '0 auto' }}>
         {/* Left Panel */}
         <div className="left-panel" style={{ flex: 1 }}>
           {mode === 'upload' ? (
@@ -1279,7 +1458,7 @@ export default function NanoPage() {
         </div>
 
         {/* Right Panel - AI Options */}
-        <div className="right-panel" style={{ width: '350px' }}>
+        <div className="right-panel" style={{ width: '320px' }}>
           
           <div style={{
             background: 'linear-gradient(135deg, #111111, #1a1a1a)',
@@ -1484,6 +1663,7 @@ export default function NanoPage() {
           </div>
         </div>
       </div>
+      </section>
 
       {/* Error Display */}
       {error && (
@@ -1723,230 +1903,119 @@ export default function NanoPage() {
         </div>
       )}
 
-      {/* 使用示例部分 */}
-      <div style={{
-        marginTop: '4rem',
-        padding: '2rem',
-        backgroundColor: '#0a0a0a',
-        borderRadius: '1.5rem',
-        border: '1px solid #222'
-      }}>
-        <h2 style={{
-          fontSize: '1.8rem',
-          fontWeight: 'bold',
-          marginBottom: '2rem',
-          textAlign: 'center',
-          background: 'linear-gradient(135deg, #00d4aa, #00a3ff)',
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
-          backgroundClip: 'text'
-        }}>
-          🎨 使用示例
-        </h2>
-        
-        <div className="examples-grid" style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-          gap: '1.5rem',
-          marginBottom: '2rem'
-        }}>
-          {/* 文生图示例 */}
-          <div style={{
-            backgroundColor: '#111',
-            padding: '1.5rem',
-            borderRadius: '1rem',
-            border: '1px solid #333'
-          }}>
-            <h3 style={{
-              color: '#00d4aa',
-              fontSize: '1.2rem',
-              marginBottom: '1rem',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem'
-            }}>
-              ✨ 文生图示例
-            </h3>
-            <div style={{ marginBottom: '1rem' }}>
-              <strong style={{ color: '#888' }}>提示词：</strong>
-              <p style={{ 
-                color: '#ccc', 
-                fontFamily: 'monospace',
-                backgroundColor: '#222',
-                padding: '0.5rem',
-                borderRadius: '0.5rem',
-                margin: '0.5rem 0'
-              }}>
-                "一只可爱的橘猫坐在窗台上，阳光透过窗户洒在它身上，温暖的午后时光"
-              </p>
-            </div>
-            <div style={{ marginBottom: '1rem' }}>
-              <strong style={{ color: '#888' }}>风格：</strong>
-              <span style={{ color: '#00d4aa', marginLeft: '0.5rem' }}>写实照片</span>
-            </div>
-            <div>
-              <strong style={{ color: '#888' }}>生成数量：</strong>
-              <span style={{ color: '#00d4aa', marginLeft: '0.5rem' }}>2张</span>
-            </div>
-          </div>
-
-          {/* 图片编辑示例 */}
-          <div style={{
-            backgroundColor: '#111',
-            padding: '1.5rem',
-            borderRadius: '1rem',
-            border: '1px solid #333'
-          }}>
-            <h3 style={{
-              color: '#00a3ff',
-              fontSize: '1.2rem',
-              marginBottom: '1rem',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem'
-            }}>
-              🖼️ 图片编辑示例
-            </h3>
-            <div style={{ marginBottom: '1rem' }}>
-              <strong style={{ color: '#888' }}>操作：</strong>
-              <p style={{ color: '#ccc', margin: '0.5rem 0' }}>
-                1. 上传一张人物照片
-              </p>
-              <p style={{ 
-                color: '#ccc', 
-                fontFamily: 'monospace',
-                backgroundColor: '#222',
-                padding: '0.5rem',
-                borderRadius: '0.5rem',
-                margin: '0.5rem 0'
-              }}>
-                2. 输入："把背景换成星空，添加魔法光效"
-              </p>
-            </div>
-            <div>
-              <strong style={{ color: '#888' }}>风格：</strong>
-              <span style={{ color: '#00a3ff', marginLeft: '0.5rem' }}>艺术风格</span>
-            </div>
-          </div>
-        </div>
-
-        {/* 提示词技巧 */}
+      <section style={{ marginTop: '3rem' }}>
         <div style={{
-          backgroundColor: '#111',
-          padding: '1.5rem',
-          borderRadius: '1rem',
-          border: '1px solid #333',
-          marginBottom: '2rem'
+          display: 'flex',
+          justifyContent: 'space-between',
+          gap: '1rem',
+          alignItems: 'end',
+          flexWrap: 'wrap',
+          marginBottom: '1.4rem'
         }}>
-          <h3 style={{
-            color: '#ffa500',
-            fontSize: '1.2rem',
-            marginBottom: '1rem',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem'
-          }}>
-            💡 提示词技巧
-          </h3>
-          <div className="tips-grid" style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-            gap: '1rem'
-          }}>
-            <div>
-              <strong style={{ color: '#ffa500' }}>✅ 好的提示词：</strong>
-              <ul style={{ color: '#ccc', marginTop: '0.5rem', paddingLeft: '1rem' }}>
-                <li>描述具体细节：颜色、光线、构图</li>
-                <li>指定风格：写实、动漫、油画等</li>
-                <li>添加情感：温暖、神秘、活力等</li>
-                <li>描述环境：室内、户外、特定场景</li>
-              </ul>
-            </div>
-            <div>
-              <strong style={{ color: '#ff6b6b' }}>❌ 避免：</strong>
-              <ul style={{ color: '#ccc', marginTop: '0.5rem', paddingLeft: '1rem' }}>
-                <li>过于简单："猫"</li>
-                <li>过于复杂：超长描述</li>
-                <li>模糊概念：没有具体描述</li>
-                <li>敏感内容：违规或不当内容</li>
-              </ul>
-            </div>
+          <div>
+            <p style={{ margin: 0, color: '#f59e0b', letterSpacing: '0.18em', fontSize: '0.78rem', textTransform: 'uppercase' }}>
+              Prompt Gallery
+            </p>
+            <h3 style={{ margin: '0.4rem 0 0', fontSize: '1.8rem', lineHeight: 1.1 }}>
+              像参考站一样，把案例当成工作流入口
+            </h3>
           </div>
+          <p style={{ margin: 0, maxWidth: '480px', color: '#9ca3af', fontSize: '0.95rem', lineHeight: 1.7 }}>
+            每组案例都能直接回填到输入框。与其堆很多说明卡片，不如让灵感素材自己解释模型适合做什么。
+          </p>
         </div>
 
-        {/* 常用提示词模板 */}
-        <div style={{
-          backgroundColor: '#111',
-          padding: '1.5rem',
-          borderRadius: '1rem',
-          border: '1px solid #333'
-        }}>
-          <h3 style={{
-            color: '#9d4edd',
-            fontSize: '1.2rem',
-            marginBottom: '1rem',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem'
-          }}>
-            📝 常用提示词模板
-          </h3>
-          <div className="templates-grid" style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-            gap: '1rem'
-          }}>
-            <div style={{ padding: '1rem', backgroundColor: '#222', borderRadius: '0.5rem' }}>
-              <strong style={{ color: '#9d4edd' }}>🏞️ 风景类：</strong>
-              <p style={{ 
-                color: '#ccc', 
-                fontFamily: 'monospace',
-                fontSize: '0.9rem',
-                marginTop: '0.5rem',
-                lineHeight: '1.4'
+        <div style={{ display: 'grid', gap: '1rem' }}>
+          {showcaseSections.map((section, sectionIndex) => (
+            <div
+              key={section.title}
+              style={{
+                borderRadius: '1.6rem',
+                border: '1px solid rgba(255,255,255,0.08)',
+                background: 'linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.015))',
+                padding: '1.25rem'
+              }}
+            >
+              <div style={{ marginBottom: '1rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.35rem' }}>
+                  <span style={{
+                    width: '1.9rem',
+                    height: '1.9rem',
+                    borderRadius: '999px',
+                    background: sectionIndex % 2 === 0 ? 'rgba(245, 158, 11, 0.16)' : 'rgba(99, 102, 241, 0.18)',
+                    color: sectionIndex % 2 === 0 ? '#fbbf24' : '#a5b4fc',
+                    display: 'grid',
+                    placeItems: 'center',
+                    fontSize: '0.88rem',
+                    fontWeight: 700
+                  }}>
+                    0{sectionIndex + 1}
+                  </span>
+                  <h4 style={{ margin: 0, fontSize: '1.15rem' }}>{section.title}</h4>
+                </div>
+                <p style={{ margin: 0, color: '#9ca3af', fontSize: '0.92rem', lineHeight: 1.65 }}>
+                  {section.subtitle}
+                </p>
+              </div>
+
+              <div className="examples-grid" style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+                gap: '0.85rem'
               }}>
-                "壮丽的山脉日出，金色阳光穿透云层，前景有清澈的湖水倒影，4K超高清"
-              </p>
+                {section.prompts.map((item) => (
+                  <button
+                    key={item}
+                    onClick={() => {
+                      setMode('text')
+                      setPrompt(item)
+                    }}
+                    style={{
+                      textAlign: 'left',
+                      padding: '1rem',
+                      borderRadius: '1rem',
+                      border: '1px solid rgba(255,255,255,0.08)',
+                      background: 'rgba(255,255,255,0.02)',
+                      color: '#f3f4f6',
+                      cursor: 'pointer',
+                      minHeight: '132px'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = 'translateY(-3px)'
+                      e.currentTarget.style.borderColor = 'rgba(245, 158, 11, 0.45)'
+                      e.currentTarget.style.boxShadow = '0 14px 34px rgba(0,0,0,0.22)'
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = 'translateY(0)'
+                      e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'
+                      e.currentTarget.style.boxShadow = 'none'
+                    }}
+                  >
+                    <div style={{
+                      width: '100%',
+                      height: '72px',
+                      borderRadius: '0.8rem',
+                      marginBottom: '0.85rem',
+                      background: sectionIndex % 2 === 0
+                        ? 'linear-gradient(135deg, rgba(245,158,11,0.3), rgba(251,113,133,0.16), rgba(255,255,255,0.03))'
+                        : 'linear-gradient(135deg, rgba(99,102,241,0.28), rgba(34,211,238,0.16), rgba(255,255,255,0.03))'
+                    }} />
+                    <p style={{
+                      margin: 0,
+                      fontSize: '0.92rem',
+                      lineHeight: 1.65,
+                      color: '#e5e7eb'
+                    }}>
+                      {item}
+                    </p>
+                  </button>
+                ))}
+              </div>
             </div>
-            <div style={{ padding: '1rem', backgroundColor: '#222', borderRadius: '0.5rem' }}>
-              <strong style={{ color: '#9d4edd' }}>👤 人像类：</strong>
-              <p style={{ 
-                color: '#ccc', 
-                fontFamily: 'monospace',
-                fontSize: '0.9rem',
-                marginTop: '0.5rem',
-                lineHeight: '1.4'
-              }}>
-                "专业商务女性肖像，自然光线，现代办公室背景，专业摄影，高清细节"
-              </p>
-            </div>
-            <div style={{ padding: '1rem', backgroundColor: '#222', borderRadius: '0.5rem' }}>
-              <strong style={{ color: '#9d4edd' }}>🎨 艺术类：</strong>
-              <p style={{ 
-                color: '#ccc', 
-                fontFamily: 'monospace',
-                fontSize: '0.9rem',
-                marginTop: '0.5rem',
-                lineHeight: '1.4'
-              }}>
-                "抽象几何艺术，鲜艳色彩搭配，现代艺术风格，高对比度，创意构图"
-              </p>
-            </div>
-            <div style={{ padding: '1rem', backgroundColor: '#222', borderRadius: '0.5rem' }}>
-              <strong style={{ color: '#9d4edd' }}>🚀 科幻类：</strong>
-              <p style={{ 
-                color: '#ccc', 
-                fontFamily: 'monospace',
-                fontSize: '0.9rem',
-                marginTop: '0.5rem',
-                lineHeight: '1.4'
-              }}>
-                "未来城市天际线，霓虹灯光，飞行汽车，赛博朋克风格，夜景，高科技感"
-              </p>
-            </div>
-          </div>
+          ))}
         </div>
-      </div>
+      </section>
+      </main>
 
       {/* Error Modal */}
       {showErrorModal && (
@@ -2110,7 +2179,7 @@ export default function NanoPage() {
               配置自定义的 API 密钥和中转服务地址。留空则使用默认服务。
               <br />
               <a
-                href="https://apipro.maynor1024.live"
+                href="https://api.chatfire.site"
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{ color: '#10b981', textDecoration: 'underline' }}
@@ -2142,7 +2211,7 @@ export default function NanoPage() {
                   type="password"
                   value={apiConfig.geminiApiKey}
                   onChange={(e) => setApiConfig({ ...apiConfig, geminiApiKey: e.target.value })}
-                  placeholder="从 apipro.maynor1024.live 获取"
+                  placeholder="从 Chatfire 获取"
                   style={{
                     width: '100%',
                     padding: '0.75rem',
@@ -2168,7 +2237,70 @@ export default function NanoPage() {
                   type="text"
                   value={apiConfig.geminiApiUrl}
                   onChange={(e) => setApiConfig({ ...apiConfig, geminiApiUrl: e.target.value })}
-                  placeholder="https://apipro.maynor1024.live"
+                  placeholder="https://api.chatfire.site"
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    backgroundColor: '#0a0a0a',
+                    border: '1px solid #333',
+                    borderRadius: '0.5rem',
+                    color: '#fff',
+                    fontSize: '0.95rem'
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* OpenAI API Config */}
+            <div style={{ marginBottom: '1.5rem' }}>
+              <h3 style={{
+                color: '#f59e0b',
+                fontSize: '1.1rem',
+                marginBottom: '1rem'
+              }}>
+                OpenAI API
+              </h3>
+
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{
+                  display: 'block',
+                  color: '#ccc',
+                  marginBottom: '0.5rem',
+                  fontSize: '0.9rem'
+                }}>
+                  API Key
+                </label>
+                <input
+                  type="password"
+                  value={apiConfig.openaiApiKey}
+                  onChange={(e) => setApiConfig({ ...apiConfig, openaiApiKey: e.target.value })}
+                  placeholder="输入 OpenAI 或兼容网关的 API Key"
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    backgroundColor: '#0a0a0a',
+                    border: '1px solid #333',
+                    borderRadius: '0.5rem',
+                    color: '#fff',
+                    fontSize: '0.95rem'
+                  }}
+                />
+              </div>
+
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{
+                  display: 'block',
+                  color: '#ccc',
+                  marginBottom: '0.5rem',
+                  fontSize: '0.9rem'
+                }}>
+                  API URL
+                </label>
+                <input
+                  type="text"
+                  value={apiConfig.openaiApiUrl}
+                  onChange={(e) => setApiConfig({ ...apiConfig, openaiApiUrl: e.target.value })}
+                  placeholder="https://api.chatfire.site"
                   style={{
                     width: '100%',
                     padding: '0.75rem',
@@ -2205,7 +2337,7 @@ export default function NanoPage() {
                   type="password"
                   value={apiConfig.doubaoApiKey}
                   onChange={(e) => setApiConfig({ ...apiConfig, doubaoApiKey: e.target.value })}
-                  placeholder="从 apipro.maynor1024.live 获取"
+                  placeholder="从 Chatfire 获取"
                   style={{
                     width: '100%',
                     padding: '0.75rem',
@@ -2231,7 +2363,7 @@ export default function NanoPage() {
                   type="text"
                   value={apiConfig.doubaoApiUrl}
                   onChange={(e) => setApiConfig({ ...apiConfig, doubaoApiUrl: e.target.value })}
-                  placeholder="https://apipro.maynor1024.live"
+                  placeholder="https://api.chatfire.site"
                   style={{
                     width: '100%',
                     padding: '0.75rem',

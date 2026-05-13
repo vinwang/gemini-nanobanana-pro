@@ -7,7 +7,7 @@ import UserAuth from '../components/UserAuth'
 
 type Mode = 'upload' | 'text'
 type Style = 'none' | 'enhance' | 'artistic' | 'anime' | 'photo'
-type Model = 'gemini-3-pro-image-preview' | 'gemini' | 'doubao'
+type Model = 'gemini-3-pro-image-preview' | 'gemini' | 'openai' | 'doubao'
 
 export default function EnhancedNanoPage() {
   const [mode, setMode] = useState<Mode>('text')

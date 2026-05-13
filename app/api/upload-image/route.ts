@@ -1,8 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
+import {
+  createApiErrorResponse,
+  detectApiErrorCode,
+  detectApiErrorCodeFromException
+} from '@/app/lib/api-error'
 
 export const runtime = 'nodejs'
 export const maxDuration = 30
 
+/**
+ * 处理图片上传请求
+ * @param request Next.js 请求对象
+ * @returns 图片上传结果
+ */
 async function uploadImageHandler(request: NextRequest) {
   try {
     const { imageData, mimeType } = await request.json()
@@ -12,8 +22,12 @@ async function uploadImageHandler(request: NextRequest) {
     }
 
     // ImgBB API配置
-    const apiKey = process.env.IMGBB_API_KEY || 'f4e662f6c1f44d6c8c8a2b8e8f9c0d1e' // 临时测试key
+    const apiKey = process.env.IMGBB_API_KEY
     const apiUrl = 'https://api.imgbb.com/1/upload'
+
+    if (!apiKey) {
+      return NextResponse.json(createApiErrorResponse('CONFIG', 500), { status: 500 })
+    }
 
     // 准备表单数据
     const formData = new FormData()
@@ -32,19 +46,10 @@ async function uploadImageHandler(request: NextRequest) {
     if (!response.ok) {
       const errorData = await response.json()
       console.error('ImgBB API错误:', errorData)
-
-      // 如果是免费额度用完，返回特定错误
-      if (response.status === 429) {
-        return NextResponse.json({
-          error: '上传服务暂时不可用，请稍后再试',
-          code: 'RATE_LIMIT'
-        }, { status: 429 })
-      }
-
-      return NextResponse.json({
-        error: errorData.error?.message || '图片上传失败',
-        details: errorData
-      }, { status: response.status })
+      return NextResponse.json(
+        createApiErrorResponse(detectApiErrorCode(errorData, response.status), response.status),
+        { status: response.status }
+      )
     }
 
     const data = await response.json()
@@ -66,33 +71,23 @@ async function uploadImageHandler(request: NextRequest) {
     }
 
     return NextResponse.json({
-      error: '图片上传失败，返回数据格式错误',
-      raw_response: data
+      ...createApiErrorResponse('UNAVAILABLE', 500)
     }, { status: 500 })
 
   } catch (error) {
     console.error('上传错误:', error)
-
-    let errorMessage = '图片上传失败'
-    let errorDetails = '未知错误'
-
-    if (error instanceof Error) {
-      errorDetails = error.message
-      if (error.message.includes('fetch')) {
-        errorMessage = '无法连接到图片服务器，请检查网络'
-      } else if (error.message.includes('timeout')) {
-        errorMessage = '上传超时，请重试'
-      }
-    }
-
-    return NextResponse.json({
-      error: errorMessage,
-      details: errorDetails,
-      timestamp: new Date().toISOString()
-    }, { status: 500 })
+    return NextResponse.json(
+      createApiErrorResponse(detectApiErrorCodeFromException(error), 500),
+      { status: 500 }
+    )
   }
 }
 
+/**
+ * 处理图片上传路由的 POST 请求
+ * @param request Next.js 请求对象
+ * @returns 图片上传路由结果
+ */
 export async function POST(request: NextRequest) {
   return uploadImageHandler(request)
 }
