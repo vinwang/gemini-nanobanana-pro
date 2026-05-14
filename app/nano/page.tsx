@@ -32,6 +32,7 @@ export default function NanoPage() {
   const [imagePreviews, setImagePreviews] = useState<string[]>([])
   const [isUploading, setIsUploading] = useState(false)
   const [style, setStyle] = useState<Style>('none')
+  const [selectedEditingPrompt, setSelectedEditingPrompt] = useState<number | null>(null)
   const [model, setModel] = useState<Model>('gemini-3-pro-image-preview')
   const [imageSize, setImageSize] = useState<string>('1k')
   const [loading, setLoading] = useState(false)
@@ -628,7 +629,7 @@ export default function NanoPage() {
             alignItems: 'center',
             gap: '0.9rem'
           }}>
-            <div style={{
+            <div className="brand-mark" style={{
               width: '2.6rem',
               height: '2.6rem',
               borderRadius: '0.85rem',
@@ -666,7 +667,7 @@ export default function NanoPage() {
             gap: '0.75rem',
             flexWrap: 'wrap'
           }}>
-            <div style={{
+            <div className="language-switch" data-current-language={language} style={{
               display: 'flex',
               gap: '0.35rem',
               backgroundColor: 'rgba(255,255,255,0.04)',
@@ -675,11 +676,15 @@ export default function NanoPage() {
               border: '1px solid rgba(255,255,255,0.08)'
             }}>
             <button
+              className={language === 'zh' ? 'language-button active selected-language' : 'language-button'}
+              data-language="zh"
+              aria-pressed={language === 'zh'}
               onClick={() => setLanguage('zh')}
               style={{
                 padding: '0.42rem 0.8rem',
-                backgroundColor: language === 'zh' ? '#f59e0b' : 'transparent',
-                color: language === 'zh' ? '#111' : '#9ca3af',
+                background: language === 'zh' ? 'linear-gradient(135deg, #2563eb, #06b6d4)' : 'transparent',
+                backgroundColor: language === 'zh' ? '#2563eb' : 'transparent',
+                color: language === 'zh' ? '#ffffff' : '#475569',
                 border: 'none',
                 borderRadius: '999px',
                 cursor: 'pointer',
@@ -691,11 +696,15 @@ export default function NanoPage() {
               中文
             </button>
             <button
+              className={language === 'en' ? 'language-button active selected-language' : 'language-button'}
+              data-language="en"
+              aria-pressed={language === 'en'}
               onClick={() => setLanguage('en')}
               style={{
                 padding: '0.42rem 0.8rem',
-                backgroundColor: language === 'en' ? '#f59e0b' : 'transparent',
-                color: language === 'en' ? '#111' : '#9ca3af',
+                background: language === 'en' ? 'linear-gradient(135deg, #2563eb, #06b6d4)' : 'transparent',
+                backgroundColor: language === 'en' ? '#2563eb' : 'transparent',
+                color: language === 'en' ? '#ffffff' : '#475569',
                 border: 'none',
                 borderRadius: '999px',
                 cursor: 'pointer',
@@ -739,10 +748,10 @@ export default function NanoPage() {
         </div>
       </header>
 
-      <main style={{ maxWidth: '1200px', margin: '0 auto', padding: '1.5rem 1.2rem 4rem' }}>
+      <main style={{ width: '100%', maxWidth: '1200px', margin: '0 auto', padding: '1rem clamp(1rem, 3vw, 2rem) 3rem' }}>
       <section className="hero-panel" style={{
-        margin: '0 auto 1.25rem',
-        maxWidth: '1120px'
+        margin: '0 auto 1rem',
+        maxWidth: '1040px'
       }}>
         <div style={{
           display: 'inline-flex',
@@ -815,7 +824,7 @@ export default function NanoPage() {
               ? 'linear-gradient(135deg, #f59e0b, #ea580c)'
               : 'rgba(255,255,255,0.03)',
             border: mode === 'upload' ? 'none' : '1px solid rgba(255,255,255,0.08)',
-            color: 'white',
+            color: mode === 'upload' ? 'white' : '#0f172a',
             borderRadius: '999px',
             cursor: 'pointer',
             fontSize: '0.96rem',
@@ -828,14 +837,14 @@ export default function NanoPage() {
           }}
           onMouseEnter={(e) => {
             if (mode !== 'upload') {
-              e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.06)'
+              e.currentTarget.style.backgroundColor = 'rgba(239, 246, 255, 0.98)'
               e.currentTarget.style.transform = 'translateY(-2px)'
               e.currentTarget.style.boxShadow = '0 10px 28px rgba(0, 0, 0, 0.18)'
             }
           }}
           onMouseLeave={(e) => {
             if (mode !== 'upload') {
-              e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.03)'
+              e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.86)'
               e.currentTarget.style.transform = 'none'
               e.currentTarget.style.boxShadow = 'none'
             }
@@ -853,7 +862,7 @@ export default function NanoPage() {
               ? 'linear-gradient(135deg, #f59e0b, #ea580c)'
               : 'rgba(255,255,255,0.03)',
             border: mode === 'text' ? 'none' : '1px solid rgba(255,255,255,0.08)',
-            color: 'white',
+            color: mode === 'text' ? 'white' : '#0f172a',
             borderRadius: '999px',
             cursor: 'pointer',
             fontSize: '0.96rem',
@@ -866,14 +875,14 @@ export default function NanoPage() {
           }}
           onMouseEnter={(e) => {
             if (mode !== 'text') {
-              e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.06)'
+              e.currentTarget.style.backgroundColor = 'rgba(239, 246, 255, 0.98)'
               e.currentTarget.style.transform = 'translateY(-2px)'
               e.currentTarget.style.boxShadow = '0 10px 28px rgba(0, 0, 0, 0.18)'
             }
           }}
           onMouseLeave={(e) => {
             if (mode !== 'text') {
-              e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.03)'
+              e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.86)'
               e.currentTarget.style.transform = 'none'
               e.currentTarget.style.boxShadow = 'none'
             }
@@ -884,13 +893,14 @@ export default function NanoPage() {
       </div>
 
 
-      <section style={{
-        maxWidth: '1040px',
+      <section className="workbench-shell" style={{
+        maxWidth: 'none',
+        width: '100%',
         margin: '0 auto',
-        borderRadius: '2rem',
-        background: 'linear-gradient(180deg, rgba(255,255,255,0.035), rgba(255,255,255,0.02))',
-        border: '1px solid rgba(255,255,255,0.07)',
-        boxShadow: '0 26px 80px rgba(0,0,0,0.34)',
+        borderRadius: 0,
+        background: 'transparent',
+        border: 'none',
+        boxShadow: 'none',
         overflow: 'hidden'
       }}>
       {/* Model Selector */}
@@ -1015,7 +1025,7 @@ export default function NanoPage() {
       </div>
 
       {/* Main Content */}
-      <div className="main-content" style={{ display: 'flex', gap: '1.4rem', padding: '0 1.2rem 1.2rem', maxWidth: '1400px', margin: '0 auto' }}>
+      <div className="main-content" style={{ display: 'flex', gap: '1.4rem', padding: '0 0 1.2rem', maxWidth: 'none', margin: '0 auto' }}>
         {/* Left Panel */}
         <div className="left-panel" style={{ flex: 1 }}>
           {mode === 'upload' ? (
@@ -1026,13 +1036,13 @@ export default function NanoPage() {
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
               style={{
-                background: 'linear-gradient(135deg, #111111, #1a1a1a)',
-                border: '2px dashed rgba(16, 185, 129, 0.3)',
+              background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(240, 249, 255, 0.88))',
+              border: '2px dashed rgba(37, 99, 235, 0.28)',
                 borderRadius: '1.5rem',
                 padding: '2rem',
                 textAlign: 'center',
                 minHeight: '400px',
-                boxShadow: '0 10px 30px rgba(0, 0, 0, 0.3)',
+              boxShadow: '0 18px 54px rgba(37, 99, 235, 0.10)',
                 transition: 'all 0.3s ease',
                 cursor: 'pointer'
               }}
@@ -1172,8 +1182,8 @@ export default function NanoPage() {
                   </div>
                 </div>
               ) : (
-                <>
-                  <div style={{ fontSize: '3rem', color: '#10b981', marginBottom: '1rem' }}>📸</div>
+                <div className="upload-empty-state">
+                  <div className="upload-camera-icon" style={{ fontSize: '3rem', color: '#10b981', marginBottom: '1rem' }}>📸</div>
                   <h3 style={{ fontSize: '1.25rem', marginBottom: '0.5rem', color: '#10b981' }}>拖拽图片到此处或点击上传</h3>
                   <p style={{ color: '#888', marginBottom: '1rem', lineHeight: '1.5' }}>
                     💡 支持多图上传，最多10张<br />
@@ -1213,19 +1223,19 @@ export default function NanoPage() {
                   >
                     📁 选择图片文件
                   </label>
-                </>
+                </div>
               )}
             </div>
           ) : (
-            <div style={{ display: 'flex', gap: '2rem' }}>
+            <div className="text-mode-layout" style={{ display: 'flex', gap: '2rem' }}>
               {/* Quick Prompts */}
-              <div style={{
-                background: 'linear-gradient(135deg, #111111, #1a1a1a)',
+              <div className="prompt-sidebar" style={{
+                background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(248, 251, 255, 0.86))',
                 borderRadius: '1.5rem',
                 padding: '1.5rem',
                 minWidth: '200px',
-                boxShadow: '0 8px 25px rgba(0, 0, 0, 0.3)',
-                border: '1px solid rgba(16, 185, 129, 0.1)'
+                boxShadow: '0 18px 54px rgba(37, 99, 235, 0.10)',
+                border: '1px solid rgba(37, 99, 235, 0.14)'
               }}>
                 <h3 style={{ 
                   fontSize: '1.1rem', 
@@ -1248,9 +1258,9 @@ export default function NanoPage() {
                       style={{
                         padding: '0.5rem',
                         backgroundColor: 'transparent',
-                        border: '1px solid #333',
+                        border: '1px solid rgba(37, 99, 235, 0.18)',
                         borderRadius: '0.75rem',
-                        color: '#888',
+                        color: '#334155',
                         cursor: 'pointer',
                         display: 'flex',
                         alignItems: 'center',
@@ -1261,15 +1271,15 @@ export default function NanoPage() {
                         overflow: 'hidden'
                       }}
                       onMouseEnter={(e) => {
-                        e.currentTarget.style.borderColor = '#10b981'
-                        e.currentTarget.style.color = '#10b981'
-                        e.currentTarget.style.backgroundColor = 'rgba(16, 185, 129, 0.05)'
+                        e.currentTarget.style.borderColor = 'rgba(37, 99, 235, 0.55)'
+                        e.currentTarget.style.color = '#1d4ed8'
+                        e.currentTarget.style.backgroundColor = 'rgba(239, 246, 255, 0.98)'
                         e.currentTarget.style.transform = 'translateY(-1px)'
                         e.currentTarget.style.boxShadow = '0 4px 12px rgba(16, 185, 129, 0.15)'
                       }}
                       onMouseLeave={(e) => {
-                        e.currentTarget.style.borderColor = '#333'
-                        e.currentTarget.style.color = '#888'
+                        e.currentTarget.style.borderColor = 'rgba(37, 99, 235, 0.18)'
+                        e.currentTarget.style.color = '#334155'
                         e.currentTarget.style.backgroundColor = 'transparent'
                         e.currentTarget.style.transform = 'none'
                         e.currentTarget.style.boxShadow = 'none'
@@ -1283,14 +1293,14 @@ export default function NanoPage() {
               </div>
 
               {/* Text Input Area */}
-              <div style={{ flex: 1 }}>
+              <div className="prompt-editor-wrap" style={{ flex: 1 }}>
                 <div className="text-input-area" style={{
-                  background: 'linear-gradient(135deg, #111111, #1a1a1a)',
+                  background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(248, 251, 255, 0.86))',
                   borderRadius: '1.5rem',
                   padding: '1.5rem',
                   minHeight: '400px',
-                  boxShadow: '0 8px 25px rgba(0, 0, 0, 0.3)',
-                  border: '1px solid rgba(16, 185, 129, 0.1)'
+                  boxShadow: '0 18px 54px rgba(37, 99, 235, 0.10)',
+                  border: '1px solid rgba(37, 99, 235, 0.14)'
                 }}>
                   <h3 style={{ 
                     fontSize: '1.1rem', 
@@ -1311,22 +1321,22 @@ export default function NanoPage() {
                     style={{
                       width: '100%',
                       minHeight: '200px',
-                      background: 'linear-gradient(135deg, #1a1a1a, #222222)',
-                      border: '1px solid #333',
+                      background: 'rgba(255, 255, 255, 0.96)',
+                      border: '1px solid rgba(99, 102, 241, 0.22)',
                       borderRadius: '0.75rem',
                       padding: '1rem',
-                      color: 'white',
+                      color: '#0f172a',
                       fontSize: '1rem',
                       resize: 'vertical',
                       transition: 'all 0.3s ease',
                       outline: 'none'
                     }}
                     onFocus={(e) => {
-                      e.currentTarget.style.borderColor = '#10b981'
-                      e.currentTarget.style.boxShadow = '0 0 20px rgba(16, 185, 129, 0.2)'
+                      e.currentTarget.style.borderColor = 'rgba(37, 99, 235, 0.72)'
+                      e.currentTarget.style.boxShadow = '0 0 0 4px rgba(37, 99, 235, 0.12)'
                     }}
                     onBlur={(e) => {
-                      e.currentTarget.style.borderColor = '#333'
+                      e.currentTarget.style.borderColor = 'rgba(99, 102, 241, 0.22)'
                       e.currentTarget.style.boxShadow = 'none'
                     }}
                   />
@@ -1345,13 +1355,13 @@ export default function NanoPage() {
 
           {/* Quick Editing Styles for Upload Mode */}
           {mode === 'upload' && (
-            <div style={{
-              background: 'linear-gradient(135deg, #111111, #1a1a1a)',
+            <div className="edit-style-panel" style={{
+              background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(248, 251, 255, 0.86))',
               borderRadius: '1.5rem',
               padding: '1.5rem',
               marginTop: '1rem',
-              boxShadow: '0 8px 25px rgba(0, 0, 0, 0.3)',
-              border: '1px solid rgba(16, 185, 129, 0.1)'
+              boxShadow: '0 18px 54px rgba(37, 99, 235, 0.10)',
+              border: '1px solid rgba(37, 99, 235, 0.14)'
             }}>
               <h3 style={{ 
                 fontSize: '1.1rem', 
@@ -1369,15 +1379,19 @@ export default function NanoPage() {
               <div className="quick-prompts-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '0.75rem' }}>
                 {editingQuickPrompts.map((item, index) => (
                   <button
-                    className="quick-prompt-button"
+                    className={selectedEditingPrompt === index ? 'quick-prompt-button selected-edit-prompt' : 'quick-prompt-button'}
                     key={index}
-                    onClick={() => setPrompt(item.value)}
+                    aria-pressed={selectedEditingPrompt === index}
+                    onClick={() => {
+                      setSelectedEditingPrompt(index)
+                      setPrompt(item.value)
+                    }}
                     style={{
                       padding: '0.75rem 0.5rem',
-                      backgroundColor: 'transparent',
-                      border: '1px solid #333',
+                      backgroundColor: selectedEditingPrompt === index ? 'rgba(37, 99, 235, 0.10)' : 'transparent',
+                      border: selectedEditingPrompt === index ? '1px solid rgba(37, 99, 235, 0.68)' : '1px solid rgba(37, 99, 235, 0.18)',
                       borderRadius: '0.75rem',
-                      color: '#888',
+                      color: selectedEditingPrompt === index ? '#1d4ed8' : '#334155',
                       cursor: 'pointer',
                       display: 'flex',
                       flexDirection: 'column',
@@ -1390,20 +1404,23 @@ export default function NanoPage() {
                       textAlign: 'center'
                     }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.borderColor = '#10b981'
-                      e.currentTarget.style.color = '#10b981'
-                      e.currentTarget.style.backgroundColor = 'rgba(16, 185, 129, 0.05)'
+                      e.currentTarget.style.borderColor = 'rgba(37, 99, 235, 0.55)'
+                      e.currentTarget.style.color = '#1d4ed8'
+                      e.currentTarget.style.backgroundColor = 'rgba(239, 246, 255, 0.98)'
                       e.currentTarget.style.transform = 'translateY(-2px)'
                       e.currentTarget.style.boxShadow = '0 4px 12px rgba(16, 185, 129, 0.15)'
                     }}
                     onMouseLeave={(e) => {
-                      e.currentTarget.style.borderColor = '#333'
-                      e.currentTarget.style.color = '#888'
-                      e.currentTarget.style.backgroundColor = 'transparent'
+                      e.currentTarget.style.borderColor = selectedEditingPrompt === index ? 'rgba(37, 99, 235, 0.68)' : 'rgba(37, 99, 235, 0.18)'
+                      e.currentTarget.style.color = selectedEditingPrompt === index ? '#1d4ed8' : '#334155'
+                      e.currentTarget.style.backgroundColor = selectedEditingPrompt === index ? 'rgba(37, 99, 235, 0.10)' : 'transparent'
                       e.currentTarget.style.transform = 'none'
-                      e.currentTarget.style.boxShadow = 'none'
+                      e.currentTarget.style.boxShadow = selectedEditingPrompt === index ? '0 10px 24px rgba(37, 99, 235, 0.16)' : 'none'
                     }}
                   >
+                    {selectedEditingPrompt === index && (
+                      <span className="selected-check" aria-hidden="true">✓</span>
+                    )}
                     <span style={{ fontSize: '1.2rem' }}>{item.icon}</span>
                     <span>{item.text}</span>
                   </button>
@@ -1414,13 +1431,13 @@ export default function NanoPage() {
 
           {/* Additional Options for Upload Mode */}
           {mode === 'upload' && (
-            <div style={{
-              background: 'linear-gradient(135deg, #111111, #1a1a1a)',
+            <div className="multi-edit-panel" style={{
+              background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(248, 251, 255, 0.86))',
               borderRadius: '1.5rem',
               padding: '1.5rem',
               marginTop: '1rem',
-              boxShadow: '0 8px 25px rgba(0, 0, 0, 0.3)',
-              border: '1px solid rgba(16, 185, 129, 0.1)'
+              boxShadow: '0 18px 54px rgba(37, 99, 235, 0.10)',
+              border: '1px solid rgba(37, 99, 235, 0.14)'
             }}>
               <h3 style={{ fontSize: '1.1rem', marginBottom: '1rem' }}>🎨 多图智能编辑</h3>
               <p style={{ color: '#666', fontSize: '0.9rem', marginBottom: '1rem' }}>
@@ -1433,14 +1450,14 @@ export default function NanoPage() {
                 <button
                   style={{ ...tagStyle }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = '#10b981'
-                    e.currentTarget.style.color = '#10b981'
-                    e.currentTarget.style.backgroundColor = 'rgba(16, 185, 129, 0.05)'
+                    e.currentTarget.style.borderColor = 'rgba(37, 99, 235, 0.55)'
+                    e.currentTarget.style.color = '#1d4ed8'
+                    e.currentTarget.style.backgroundColor = 'rgba(239, 246, 255, 0.98)'
                     e.currentTarget.style.transform = 'translateY(-1px)'
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = '#333'
-                    e.currentTarget.style.color = '#888'
+                    e.currentTarget.style.borderColor = 'rgba(37, 99, 235, 0.18)'
+                    e.currentTarget.style.color = '#334155'
                     e.currentTarget.style.backgroundColor = 'transparent'
                     e.currentTarget.style.transform = 'none'
                   }}
@@ -1448,14 +1465,14 @@ export default function NanoPage() {
                 <button
                   style={{ ...tagStyle }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = '#10b981'
-                    e.currentTarget.style.color = '#10b981'
-                    e.currentTarget.style.backgroundColor = 'rgba(16, 185, 129, 0.05)'
+                    e.currentTarget.style.borderColor = 'rgba(37, 99, 235, 0.55)'
+                    e.currentTarget.style.color = '#1d4ed8'
+                    e.currentTarget.style.backgroundColor = 'rgba(239, 246, 255, 0.98)'
                     e.currentTarget.style.transform = 'translateY(-1px)'
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = '#333'
-                    e.currentTarget.style.color = '#888'
+                    e.currentTarget.style.borderColor = 'rgba(37, 99, 235, 0.18)'
+                    e.currentTarget.style.color = '#334155'
                     e.currentTarget.style.backgroundColor = 'transparent'
                     e.currentTarget.style.transform = 'none'
                   }}
@@ -1463,14 +1480,14 @@ export default function NanoPage() {
                 <button
                   style={{ ...tagStyle }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = '#10b981'
-                    e.currentTarget.style.color = '#10b981'
-                    e.currentTarget.style.backgroundColor = 'rgba(16, 185, 129, 0.05)'
+                    e.currentTarget.style.borderColor = 'rgba(37, 99, 235, 0.55)'
+                    e.currentTarget.style.color = '#1d4ed8'
+                    e.currentTarget.style.backgroundColor = 'rgba(239, 246, 255, 0.98)'
                     e.currentTarget.style.transform = 'translateY(-1px)'
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = '#333'
-                    e.currentTarget.style.color = '#888'
+                    e.currentTarget.style.borderColor = 'rgba(37, 99, 235, 0.18)'
+                    e.currentTarget.style.color = '#334155'
                     e.currentTarget.style.backgroundColor = 'transparent'
                     e.currentTarget.style.transform = 'none'
                   }}
@@ -1478,14 +1495,14 @@ export default function NanoPage() {
                 <button
                   style={{ ...tagStyle }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = '#10b981'
-                    e.currentTarget.style.color = '#10b981'
-                    e.currentTarget.style.backgroundColor = 'rgba(16, 185, 129, 0.05)'
+                    e.currentTarget.style.borderColor = 'rgba(37, 99, 235, 0.55)'
+                    e.currentTarget.style.color = '#1d4ed8'
+                    e.currentTarget.style.backgroundColor = 'rgba(239, 246, 255, 0.98)'
                     e.currentTarget.style.transform = 'translateY(-1px)'
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = '#333'
-                    e.currentTarget.style.color = '#888'
+                    e.currentTarget.style.borderColor = 'rgba(37, 99, 235, 0.18)'
+                    e.currentTarget.style.color = '#334155'
                     e.currentTarget.style.backgroundColor = 'transparent'
                     e.currentTarget.style.transform = 'none'
                   }}
@@ -1499,11 +1516,11 @@ export default function NanoPage() {
         <div className="right-panel" style={{ width: '320px' }}>
           
           <div style={{
-            background: 'linear-gradient(135deg, #111111, #1a1a1a)',
+            background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(248, 251, 255, 0.86))',
             borderRadius: '1.5rem',
             padding: '1.5rem',
-            boxShadow: '0 8px 25px rgba(0, 0, 0, 0.3)',
-            border: '1px solid rgba(16, 185, 129, 0.1)'
+            boxShadow: '0 18px 54px rgba(37, 99, 235, 0.10)',
+            border: '1px solid rgba(37, 99, 235, 0.14)'
           }}>
             <h3 style={{ 
               fontSize: '1.1rem', 
@@ -1520,49 +1537,53 @@ export default function NanoPage() {
               <h4 style={{ fontSize: '0.9rem', marginBottom: '1rem', color: '#888' }}>快速风格</h4>
               <div className="style-buttons" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                 <button
-                  className="style-button"
+                  className={style === 'enhance' ? 'style-button selected-style-button' : 'style-button'}
+                  aria-pressed={style === 'enhance'}
                   onClick={() => setStyle(style === 'enhance' ? 'none' : 'enhance')}
                   style={{
                     ...styleButtonStyle,
-                    backgroundColor: style === 'enhance' ? '#10b98120' : 'transparent',
-                    borderColor: style === 'enhance' ? '#10b981' : '#333',
-                    color: style === 'enhance' ? '#10b981' : '#888'
+                    backgroundColor: style === 'enhance' ? 'rgba(37, 99, 235, 0.10)' : 'rgba(255, 255, 255, 0.86)',
+                    borderColor: style === 'enhance' ? '#2563eb' : 'rgba(37, 99, 235, 0.18)',
+                    color: style === 'enhance' ? '#1d4ed8' : '#334155'
                   }}
                 >
                   🔍 增强细节
                 </button>
                 <button
-                  className="style-button"
+                  className={style === 'artistic' ? 'style-button selected-style-button' : 'style-button'}
+                  aria-pressed={style === 'artistic'}
                   onClick={() => setStyle(style === 'artistic' ? 'none' : 'artistic')}
                   style={{
                     ...styleButtonStyle,
-                    backgroundColor: style === 'artistic' ? '#10b98120' : 'transparent',
-                    borderColor: style === 'artistic' ? '#10b981' : '#333',
-                    color: style === 'artistic' ? '#10b981' : '#888'
+                    backgroundColor: style === 'artistic' ? 'rgba(37, 99, 235, 0.10)' : 'rgba(255, 255, 255, 0.86)',
+                    borderColor: style === 'artistic' ? '#2563eb' : 'rgba(37, 99, 235, 0.18)',
+                    color: style === 'artistic' ? '#1d4ed8' : '#334155'
                   }}
                 >
                   🎨 艺术风格
                 </button>
                 <button
-                  className="style-button"
+                  className={style === 'anime' ? 'style-button selected-style-button' : 'style-button'}
+                  aria-pressed={style === 'anime'}
                   onClick={() => setStyle(style === 'anime' ? 'none' : 'anime')}
                   style={{
                     ...styleButtonStyle,
-                    backgroundColor: style === 'anime' ? '#10b98120' : 'transparent',
-                    borderColor: style === 'anime' ? '#10b981' : '#333',
-                    color: style === 'anime' ? '#10b981' : '#888'
+                    backgroundColor: style === 'anime' ? 'rgba(37, 99, 235, 0.10)' : 'rgba(255, 255, 255, 0.86)',
+                    borderColor: style === 'anime' ? '#2563eb' : 'rgba(37, 99, 235, 0.18)',
+                    color: style === 'anime' ? '#1d4ed8' : '#334155'
                   }}
                 >
                   ✨ 动漫风格
                 </button>
                 <button
-                  className="style-button"
+                  className={style === 'photo' ? 'style-button selected-style-button' : 'style-button'}
+                  aria-pressed={style === 'photo'}
                   onClick={() => setStyle(style === 'photo' ? 'none' : 'photo')}
                   style={{
                     ...styleButtonStyle,
-                    backgroundColor: style === 'photo' ? '#10b98120' : 'transparent',
-                    borderColor: style === 'photo' ? '#10b981' : '#333',
-                    color: style === 'photo' ? '#10b981' : '#888'
+                    backgroundColor: style === 'photo' ? 'rgba(37, 99, 235, 0.10)' : 'rgba(255, 255, 255, 0.86)',
+                    borderColor: style === 'photo' ? '#2563eb' : 'rgba(37, 99, 235, 0.18)',
+                    color: style === 'photo' ? '#1d4ed8' : '#334155'
                   }}
                 >
                   📷 写实照片
@@ -1582,22 +1603,22 @@ export default function NanoPage() {
                   style={{
                     width: '100%',
                     minHeight: '100px',
-                    background: 'linear-gradient(135deg, #1a1a1a, #222222)',
-                    border: '1px solid #333',
+                    background: 'rgba(255, 255, 255, 0.96)',
+                    border: '1px solid rgba(99, 102, 241, 0.22)',
                     borderRadius: '0.75rem',
                     padding: '0.75rem',
-                    color: 'white',
+                    color: '#0f172a',
                     fontSize: '0.9rem',
                     resize: 'vertical',
                     transition: 'all 0.3s ease',
                     outline: 'none'
                   }}
                   onFocus={(e) => {
-                    e.currentTarget.style.borderColor = '#10b981'
-                    e.currentTarget.style.boxShadow = '0 0 20px rgba(16, 185, 129, 0.2)'
+                    e.currentTarget.style.borderColor = 'rgba(37, 99, 235, 0.72)'
+                    e.currentTarget.style.boxShadow = '0 0 0 4px rgba(37, 99, 235, 0.12)'
                   }}
                   onBlur={(e) => {
-                    e.currentTarget.style.borderColor = '#333'
+                    e.currentTarget.style.borderColor = 'rgba(99, 102, 241, 0.22)'
                     e.currentTarget.style.boxShadow = 'none'
                   }}
                 />
@@ -2465,10 +2486,10 @@ export default function NanoPage() {
 
 const tagStyle: React.CSSProperties = {
   padding: '0.25rem 0.75rem',
-  backgroundColor: 'transparent',
-  border: '1px solid #333',
+  backgroundColor: 'rgba(255, 255, 255, 0.86)',
+  border: '1px solid rgba(37, 99, 235, 0.18)',
   borderRadius: '1.5rem',
-  color: '#888',
+  color: '#334155',
   fontSize: '0.85rem',
   cursor: 'pointer',
   transition: 'all 0.3s ease',
@@ -2479,6 +2500,7 @@ const tagStyle: React.CSSProperties = {
 const styleButtonStyle: React.CSSProperties = {
   padding: '0.75rem',
   border: '1px solid',
+  backgroundColor: 'rgba(255, 255, 255, 0.86)',
   borderRadius: '0.75rem',
   cursor: 'pointer',
   fontSize: '0.9rem',

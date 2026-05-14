@@ -547,12 +547,32 @@ textarea:focus {
   min-height: 44px;
 }
 
-.yuantu-theme button[style*="linear-gradient"],
+.yuantu-theme button[style*="linear-gradient(135deg, #f59e0b"],
+.yuantu-theme button[style*="linear-gradient(135deg, #4f46e5"],
+.yuantu-theme button[style*="linear-gradient(135deg, #fb7185"],
+.yuantu-theme button[style*="linear-gradient(135deg, #10b981"],
+.yuantu-theme button[style*="linear-gradient(135deg, #3b82f6"],
+.yuantu-theme .generate-button,
 .yuantu-theme label[for="file-upload"],
-.yuantu-theme .button-enhanced {
+.yuantu-theme .button-enhanced,
+.yuantu-theme .mode-button[style*="linear-gradient"] {
   background: linear-gradient(135deg, #2563eb, #0ea5e9) !important;
   color: #ffffff !important;
   box-shadow: 0 10px 26px rgba(37, 99, 235, 0.24) !important;
+}
+
+.yuantu-theme button:not(:disabled):not([style*="linear-gradient"]):not(.generate-button),
+.yuantu-theme .quick-prompt-button,
+.yuantu-theme .style-button,
+.yuantu-theme .action-button {
+  background: rgba(255, 255, 255, 0.82) !important;
+  color: #0f172a !important;
+  border-color: rgba(37, 99, 235, 0.22) !important;
+}
+
+.yuantu-theme .mode-button:not([style*="linear-gradient"]) {
+  color: #334155 !important;
+  background: rgba(255, 255, 255, 0.72) !important;
 }
 
 .yuantu-theme button[disabled] {
@@ -619,6 +639,66 @@ textarea:focus {
 .yuantu-theme .result-image {
   border-color: rgba(37, 99, 235, 0.28) !important;
   box-shadow: 0 18px 42px rgba(15, 23, 42, 0.14) !important;
+}
+
+.yuantu-theme .workbench-shell {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+.yuantu-theme .workbench-shell > .model-selector {
+  padding: 1rem 0 0.85rem !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+.yuantu-theme .main-content {
+  align-items: stretch;
+}
+
+.yuantu-theme .left-panel > div,
+.yuantu-theme .right-panel > div,
+.yuantu-theme .upload-area,
+.yuantu-theme .text-input-area {
+  background: rgba(255, 255, 255, 0.86) !important;
+  border: 1px solid rgba(37, 99, 235, 0.16) !important;
+  box-shadow: 0 18px 44px rgba(15, 23, 42, 0.08) !important;
+  color: #0f172a !important;
+}
+
+.yuantu-theme .upload-area {
+  min-height: 440px !important;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(248, 251, 255, 0.86)),
+    repeating-linear-gradient(90deg, rgba(37, 99, 235, 0.04) 0 1px, transparent 1px 28px) !important;
+  border-style: dashed !important;
+}
+
+.yuantu-theme .left-panel > div[style*="#111111"],
+.yuantu-theme .left-panel > div[style*="#1a1a1a"],
+.yuantu-theme .right-panel > div[style*="#111111"],
+.yuantu-theme .right-panel > div[style*="#1a1a1a"] {
+  background: rgba(255, 255, 255, 0.86) !important;
+}
+
+.yuantu-theme .quick-prompts-grid button,
+.yuantu-theme .style-buttons button {
+  color: #0f172a !important;
+  background: rgba(255, 255, 255, 0.88) !important;
+  border-color: rgba(37, 99, 235, 0.20) !important;
+}
+
+.yuantu-theme .quick-prompts-grid button:hover,
+.yuantu-theme .style-buttons button:hover {
+  color: #1d4ed8 !important;
+  border-color: rgba(37, 99, 235, 0.45) !important;
+  background: rgba(239, 246, 255, 0.96) !important;
+}
+
+.yuantu-theme textarea {
+  color: #0f172a !important;
 }
 
 .yuantu-theme ::-webkit-scrollbar-track {
@@ -694,6 +774,14 @@ textarea:focus {
 
   .yuantu-theme .value-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .yuantu-theme .main-content {
+    flex-direction: column !important;
+  }
+
+  .yuantu-theme .right-panel {
+    width: 100% !important;
   }
 }
 
@@ -777,4 +865,586 @@ input[type="file"] {
 
 .rotating {
   animation: spin 1s linear infinite;
+}
+
+/* Final AI workspace polish: full-screen, futuristic, readable */
+.yuantu-theme {
+  --yt-bg: #f7fbff;
+  --yt-surface: rgba(255, 255, 255, 0.88);
+  --yt-surface-strong: rgba(255, 255, 255, 0.96);
+  --yt-text: #0f172a;
+  --yt-muted: #475569;
+  --yt-subtle: #64748b;
+  --yt-line: rgba(99, 102, 241, 0.18);
+  --yt-primary: #2563eb;
+  --yt-primary-2: #06b6d4;
+  --yt-accent: #7c3aed;
+  min-height: 100dvh;
+  background:
+    radial-gradient(circle at 16% -4%, rgba(124, 58, 237, 0.20), transparent 30%),
+    radial-gradient(circle at 86% 4%, rgba(6, 182, 212, 0.18), transparent 28%),
+    linear-gradient(90deg, rgba(37, 99, 235, 0.045) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(37, 99, 235, 0.045) 1px, transparent 1px),
+    linear-gradient(180deg, #f8fbff 0%, #eef6ff 44%, #ffffff 100%) !important;
+  background-size: auto, auto, 36px 36px, 36px 36px, auto !important;
+  color: var(--yt-text) !important;
+}
+
+.yuantu-theme header {
+  background: rgba(248, 251, 255, 0.82) !important;
+  border-bottom: 1px solid var(--yt-line) !important;
+  box-shadow: 0 16px 48px rgba(15, 23, 42, 0.08) !important;
+}
+
+.yuantu-theme main {
+  max-width: 1280px !important;
+}
+
+.yuantu-theme .hero-panel {
+  max-width: 1080px !important;
+  padding: 1.35rem 1.5rem !important;
+  border-radius: 22px !important;
+  border: 1px solid rgba(99, 102, 241, 0.16) !important;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.72), rgba(239, 246, 255, 0.54)),
+    linear-gradient(90deg, rgba(124, 58, 237, 0.08), rgba(6, 182, 212, 0.08)) !important;
+  box-shadow: 0 18px 54px rgba(37, 99, 235, 0.10) !important;
+}
+
+.yuantu-theme .hero-grid {
+  grid-template-columns: minmax(0, 1fr) 260px !important;
+  gap: 1.25rem !important;
+}
+
+.yuantu-theme .hero-title {
+  font-size: clamp(1.85rem, 3.5vw, 3rem) !important;
+  line-height: 1.08 !important;
+}
+
+.yuantu-theme .hero-copy {
+  max-width: 640px !important;
+  font-size: 0.98rem !important;
+  line-height: 1.65 !important;
+}
+
+.yuantu-theme .hero-metrics strong {
+  font-size: 1.35rem !important;
+}
+
+.yuantu-theme .value-grid {
+  margin-top: 1rem !important;
+}
+
+.yuantu-theme .hero-title {
+  color: var(--yt-text) !important;
+}
+
+.yuantu-theme .hero-title span {
+  background: linear-gradient(90deg, #2563eb 0%, #7c3aed 52%, #06b6d4 100%);
+  background-clip: text;
+  color: transparent !important;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.yuantu-theme .workbench-shell,
+.yuantu-theme .workbench-shell > .model-selector,
+.yuantu-theme section.workbench-shell {
+  max-width: 1180px !important;
+  width: 100% !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+.yuantu-theme .main-content {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 340px);
+  align-items: stretch;
+  width: 100%;
+  gap: clamp(1rem, 2vw, 1.5rem) !important;
+  padding: 0 0 1.25rem !important;
+}
+
+.yuantu-theme .left-panel,
+.yuantu-theme .right-panel {
+  min-width: 0;
+}
+
+.yuantu-theme .right-panel {
+  width: auto !important;
+}
+
+.yuantu-theme .left-panel > div,
+.yuantu-theme .right-panel > div,
+.yuantu-theme .upload-area,
+.yuantu-theme .text-input-area,
+.yuantu-theme .example-card,
+.yuantu-theme .text-mode-layout,
+.yuantu-theme .prompt-sidebar,
+.yuantu-theme .prompt-editor-wrap,
+.yuantu-theme .edit-style-panel,
+.yuantu-theme .multi-edit-panel {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(248, 251, 255, 0.86)) !important;
+  border: 1px solid var(--yt-line) !important;
+  box-shadow: 0 18px 54px rgba(37, 99, 235, 0.10) !important;
+  color: var(--yt-text) !important;
+}
+
+.yuantu-theme .text-mode-layout {
+  gap: 1rem !important;
+  border-radius: 22px !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+.yuantu-theme .prompt-sidebar {
+  min-width: 220px !important;
+  max-width: 260px;
+}
+
+.yuantu-theme .prompt-editor-wrap {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+.yuantu-theme .upload-area {
+  min-height: 460px !important;
+  border-style: dashed !important;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(240, 249, 255, 0.88)),
+    radial-gradient(circle at center, rgba(6, 182, 212, 0.08), transparent 42%) !important;
+}
+
+.yuantu-theme p,
+.yuantu-theme span,
+.yuantu-theme div,
+.yuantu-theme h1,
+.yuantu-theme h2,
+.yuantu-theme h3,
+.yuantu-theme h4 {
+  text-shadow: none !important;
+}
+
+.yuantu-theme p,
+.yuantu-theme [style*="#888"],
+.yuantu-theme [style*="#9ca3af"],
+.yuantu-theme [style*="#666"],
+.yuantu-theme [style*="#6b7280"],
+.yuantu-theme [style*="#ccc"],
+.yuantu-theme [style*="#e5e7eb"],
+.yuantu-theme [style*="#f3f4f6"],
+.yuantu-theme [style*="#f8fafc"] {
+  color: var(--yt-muted) !important;
+}
+
+.yuantu-theme h1,
+.yuantu-theme h2,
+.yuantu-theme h3,
+.yuantu-theme h4,
+.yuantu-theme strong {
+  color: var(--yt-text) !important;
+}
+
+.yuantu-theme textarea,
+.yuantu-theme input {
+  background: rgba(255, 255, 255, 0.96) !important;
+  border: 1px solid rgba(99, 102, 241, 0.22) !important;
+  color: var(--yt-text) !important;
+  box-shadow: inset 0 1px 0 rgba(15, 23, 42, 0.03) !important;
+}
+
+.yuantu-theme textarea:focus,
+.yuantu-theme input:focus {
+  border-color: rgba(37, 99, 235, 0.72) !important;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12) !important;
+}
+
+.yuantu-theme textarea::placeholder,
+.yuantu-theme input::placeholder {
+  color: #94a3b8 !important;
+}
+
+.yuantu-theme button,
+.yuantu-theme label[for="file-upload"] {
+  min-height: 44px;
+  color: var(--yt-text) !important;
+  border-color: rgba(99, 102, 241, 0.22) !important;
+}
+
+.yuantu-theme .language-switch {
+  background: rgba(255, 255, 255, 0.72) !important;
+  border: 1px solid rgba(99, 102, 241, 0.18) !important;
+  box-shadow: 0 8px 24px rgba(37, 99, 235, 0.08) !important;
+}
+
+.yuantu-theme .language-button {
+  background: transparent !important;
+  color: #475569 !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+.yuantu-theme .language-button.active {
+  background: linear-gradient(135deg, #2563eb, #06b6d4) !important;
+  color: #ffffff !important;
+  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.22) !important;
+}
+
+.yuantu-theme .mode-button,
+.yuantu-theme .quick-prompt-button,
+.yuantu-theme .style-button,
+.yuantu-theme .action-button,
+.yuantu-theme .model-selector button:not(:disabled) {
+  background: rgba(255, 255, 255, 0.86) !important;
+  color: var(--yt-text) !important;
+  border: 1px solid rgba(99, 102, 241, 0.22) !important;
+  box-shadow: 0 8px 24px rgba(37, 99, 235, 0.08) !important;
+}
+
+.yuantu-theme .mode-button[style*="linear-gradient"],
+.yuantu-theme .model-selector button[style*="linear-gradient"],
+.yuantu-theme .generate-button,
+.yuantu-theme label[for="file-upload"],
+.yuantu-theme button[style*="linear-gradient(135deg, #10b981"],
+.yuantu-theme button[style*="linear-gradient(135deg, #3b82f6"] {
+  background: linear-gradient(135deg, #2563eb 0%, #7c3aed 52%, #06b6d4 100%) !important;
+  color: #ffffff !important;
+  border: 0 !important;
+  box-shadow: 0 16px 34px rgba(37, 99, 235, 0.28) !important;
+}
+
+.yuantu-theme button:disabled {
+  background: rgba(226, 232, 240, 0.88) !important;
+  color: #64748b !important;
+  border: 1px solid rgba(148, 163, 184, 0.22) !important;
+  box-shadow: none !important;
+}
+
+.yuantu-theme .quick-prompt-button:hover,
+.yuantu-theme .style-button:hover,
+.yuantu-theme .model-selector button:not(:disabled):hover {
+  border-color: rgba(37, 99, 235, 0.55) !important;
+  color: #1d4ed8 !important;
+  background: rgba(239, 246, 255, 0.98) !important;
+}
+
+.yuantu-theme .button-glow {
+  animation: yt-pulse 2.4s ease-in-out infinite;
+}
+
+@keyframes yt-pulse {
+  0%, 100% {
+    box-shadow: 0 16px 34px rgba(37, 99, 235, 0.25);
+  }
+  50% {
+    box-shadow: 0 18px 42px rgba(124, 58, 237, 0.34);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .yuantu-theme *,
+  .yuantu-theme .button-glow,
+  .yuantu-theme .rotating,
+  .yuantu-theme .loading {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+@media (max-width: 1100px) {
+  .yuantu-theme .main-content {
+    grid-template-columns: 1fr !important;
+  }
+
+  .yuantu-theme .right-panel {
+    width: 100% !important;
+  }
+}
+
+@media (max-width: 900px) {
+  .yuantu-theme .hero-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .yuantu-theme .text-mode-layout {
+    flex-direction: column !important;
+  }
+
+  .yuantu-theme .prompt-sidebar {
+    max-width: none;
+  }
+}
+
+/* Final YuanTu layout fixes */
+.yuantu-theme main {
+  max-width: 1280px !important;
+  padding-top: 0.9rem !important;
+}
+
+.yuantu-theme .brand-mark {
+  background: linear-gradient(135deg, #2563eb 0%, #06b6d4 100%) !important;
+  color: #ffffff !important;
+  border: 0 !important;
+}
+
+.yuantu-theme .hero-panel {
+  max-width: 980px !important;
+  padding: 3rem 1rem 1.65rem !important;
+  border-radius: 0 !important;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(37, 99, 235, 0.16), transparent 36%),
+    radial-gradient(circle at 48% 28%, rgba(6, 182, 212, 0.10), transparent 34%) !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  text-align: center !important;
+}
+
+.yuantu-theme .hero-title {
+  max-width: 780px !important;
+  margin: 0.95rem auto 0 !important;
+  font-size: clamp(2.4rem, 6.2vw, 5.1rem) !important;
+  line-height: 0.98 !important;
+  font-weight: 820 !important;
+  letter-spacing: 0 !important;
+}
+
+.yuantu-theme .hero-grid {
+  display: block !important;
+}
+
+.yuantu-theme .hero-copy {
+  max-width: 680px !important;
+  margin: 1rem auto 0 !important;
+  font-size: 1rem !important;
+  line-height: 1.72 !important;
+  color: #475569 !important;
+}
+
+.yuantu-theme .hero-status {
+  margin: 1rem auto 0 !important;
+  padding: 0.52rem 0.95rem !important;
+  font-size: 0.88rem !important;
+}
+
+.yuantu-theme .hero-metrics,
+.yuantu-theme .value-grid {
+  display: none !important;
+}
+
+.yuantu-theme .hero-metrics div {
+  padding: 0.7rem 0.78rem !important;
+  border-radius: 14px !important;
+  background: rgba(255, 255, 255, 0.58) !important;
+  border-color: rgba(37, 99, 235, 0.10) !important;
+  box-shadow: none !important;
+}
+
+.yuantu-theme .hero-metrics strong {
+  font-size: 1.15rem !important;
+}
+
+.yuantu-theme .value-grid {
+  gap: 0.65rem !important;
+  margin-top: 0.8rem !important;
+}
+
+.yuantu-theme .value-card {
+  padding: 0.75rem 0.82rem !important;
+  border-radius: 14px !important;
+  background: rgba(255, 255, 255, 0.58) !important;
+  border-color: rgba(37, 99, 235, 0.10) !important;
+  box-shadow: none !important;
+}
+
+.yuantu-theme .workbench-shell,
+.yuantu-theme .workbench-shell > .model-selector,
+.yuantu-theme section.workbench-shell {
+  max-width: 1240px !important;
+}
+
+.yuantu-theme .text-mode-layout {
+  gap: 1rem !important;
+}
+
+.yuantu-theme .prompt-sidebar,
+.yuantu-theme .text-input-area,
+.yuantu-theme .edit-style-panel,
+.yuantu-theme .multi-edit-panel,
+.yuantu-theme .right-panel > div {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(248, 251, 255, 0.9)) !important;
+  border: 1px solid rgba(37, 99, 235, 0.16) !important;
+  box-shadow: 0 18px 44px rgba(15, 23, 42, 0.08) !important;
+  color: #0f172a !important;
+}
+
+.yuantu-theme .prompt-sidebar {
+  min-width: 210px !important;
+  max-width: 240px !important;
+}
+
+.yuantu-theme .language-switch {
+  gap: 0.25rem !important;
+  padding: 0.25rem !important;
+  background: rgba(226, 232, 240, 0.72) !important;
+  border: 1px solid rgba(37, 99, 235, 0.18) !important;
+  box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.04) !important;
+}
+
+.yuantu-theme .language-button {
+  min-height: 34px !important;
+  padding: 0.36rem 0.72rem !important;
+  background: transparent !important;
+  color: #475569 !important;
+  border: 1px solid transparent !important;
+  box-shadow: none !important;
+}
+
+.yuantu-theme .language-button.active,
+.yuantu-theme .language-button[aria-pressed="true"] {
+  font-weight: 700 !important;
+}
+
+.yuantu-theme .language-switch[data-current-language="zh"] > .language-button[data-language="zh"],
+.yuantu-theme .language-switch[data-current-language="en"] > .language-button[data-language="en"] {
+  background: linear-gradient(135deg, #2563eb, #06b6d4) !important;
+  background-color: #2563eb !important;
+  color: #ffffff !important;
+  border-color: transparent !important;
+  box-shadow: 0 8px 18px rgba(37, 99, 235, 0.28) !important;
+  font-weight: 700 !important;
+}
+
+.yuantu-theme .language-switch[data-current-language="zh"] > .language-button[data-language="en"],
+.yuantu-theme .language-switch[data-current-language="en"] > .language-button[data-language="zh"] {
+  background: transparent !important;
+  background-color: transparent !important;
+  color: #475569 !important;
+  box-shadow: none !important;
+  font-weight: 600 !important;
+}
+
+.yuantu-theme .mode-selector {
+  max-width: 1240px !important;
+  padding-bottom: 1.15rem !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+.yuantu-theme .examples-section {
+  max-width: 1240px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+.yuantu-theme .workbench-shell {
+  padding: 0 1rem 1rem !important;
+  border-radius: 28px !important;
+  background: rgba(255, 255, 255, 0.34) !important;
+  border: 1px solid rgba(37, 99, 235, 0.10) !important;
+  box-shadow: 0 26px 80px rgba(37, 99, 235, 0.10) !important;
+  backdrop-filter: blur(14px) !important;
+}
+
+.yuantu-theme .quick-prompt-button,
+.yuantu-theme .style-button,
+.yuantu-theme .multi-edit-panel button {
+  background: rgba(255, 255, 255, 0.9) !important;
+  border-color: rgba(37, 99, 235, 0.2) !important;
+  color: #334155 !important;
+}
+
+.yuantu-theme .style-button[style*="#2563eb"],
+.yuantu-theme .quick-prompt-button:hover,
+.yuantu-theme .style-button:hover,
+.yuantu-theme .multi-edit-panel button:hover {
+  background: rgba(239, 246, 255, 0.98) !important;
+  border-color: rgba(37, 99, 235, 0.58) !important;
+  color: #1d4ed8 !important;
+}
+
+.yuantu-theme .upload-empty-state {
+  display: flex !important;
+  min-height: 340px !important;
+  width: 100% !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+}
+
+.yuantu-theme .upload-camera-icon {
+  display: grid !important;
+  width: 5.2rem !important;
+  height: 5.2rem !important;
+  margin: 0 auto 1rem !important;
+  place-items: center !important;
+  border-radius: 24px !important;
+  background: rgba(239, 246, 255, 0.78) !important;
+  border: 1px solid rgba(37, 99, 235, 0.14) !important;
+  box-shadow: 0 18px 40px rgba(37, 99, 235, 0.12) !important;
+}
+
+.yuantu-theme .selected-edit-prompt,
+.yuantu-theme .quick-prompt-button[aria-pressed="true"],
+.yuantu-theme .style-button[aria-pressed="true"],
+.yuantu-theme .selected-style-button {
+  background:
+    linear-gradient(180deg, rgba(239, 246, 255, 0.98), rgba(219, 234, 254, 0.72)) !important;
+  border-color: rgba(37, 99, 235, 0.68) !important;
+  color: #1d4ed8 !important;
+  box-shadow: 0 12px 28px rgba(37, 99, 235, 0.16) !important;
+}
+
+.yuantu-theme .style-buttons .selected-style-button {
+  background:
+    linear-gradient(135deg, rgba(37, 99, 235, 0.14), rgba(6, 182, 212, 0.14)) !important;
+  border-color: rgba(37, 99, 235, 0.78) !important;
+  color: #1d4ed8 !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(37, 99, 235, 0.18),
+    0 12px 28px rgba(37, 99, 235, 0.18) !important;
+  transform: translateY(-1px);
+}
+
+.yuantu-theme .selected-edit-prompt {
+  padding-top: 0.95rem !important;
+}
+
+.yuantu-theme .selected-check {
+  position: absolute;
+  top: 0.35rem;
+  right: 0.45rem;
+  display: inline-grid;
+  width: 1.05rem;
+  height: 1.05rem;
+  place-items: center;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #2563eb, #06b6d4);
+  color: #ffffff !important;
+  font-size: 0.72rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+@media (max-width: 900px) {
+  .yuantu-theme .hero-title {
+    font-size: clamp(1.35rem, 6vw, 1.8rem) !important;
+  }
+
+  .yuantu-theme .hero-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .yuantu-theme .prompt-sidebar {
+    max-width: none !important;
+  }
 }
