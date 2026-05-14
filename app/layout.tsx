@@ -4,8 +4,8 @@ import AdsterraDirectLink from './components/AdsterraDirectLink'
 import SmartlinksAd from './components/SmartlinksAd'
 
 export const metadata = {
-  title: 'Nano Banana - AI图像生成器 | AI Image Generator',
-  description: '免费AI图像生成 | Free AI Image Generation | 使用Google Gemini 2.5 Flash生成图片 | Generate and Edit Images',
+  title: '元图引擎 · AI商业视觉引擎',
+  description: '元界跃迁自研AI智能体元图引擎，专为品牌营销与电商场景打造，快速生成白底图、场景图、海报等商业视觉素材。',
   icons: {
     icon: [
       { url: '/favicon.svg', type: 'image/svg+xml' },
@@ -18,8 +18,8 @@ export const metadata = {
     ]
   },
   manifest: '/manifest.json',
-  themeColor: '#00d4aa',
-  colorScheme: 'dark',
+  themeColor: '#2563eb',
+  colorScheme: 'light',
   viewport: 'width=device-width, initial-scale=1, maximum-scale=1'
 }
 

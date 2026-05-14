@@ -1,11 +1,11 @@
 {
-  "name": "Nano Banana - AI图像生成器",
-  "short_name": "Nano Banana",
-  "description": "使用Google Gemini 2.5 Flash生成图片 | 通过对话编辑图片",
+  "name": "元图引擎 · AI商业视觉引擎",
+  "short_name": "元图引擎",
+  "description": "元界跃迁自研AI智能体，专为品牌营销与电商场景生成商业视觉素材",
   "start_url": "/nano",
   "display": "standalone",
-  "background_color": "#0a0a0a",
-  "theme_color": "#00d4aa",
+  "background_color": "#f8fbff",
+  "theme_color": "#2563eb",
   "orientation": "portrait-primary",
   "icons": [
     {
@@ -23,4 +23,4 @@
   ],
   "categories": ["productivity", "graphics", "utilities"],
   "lang": "zh-CN"
-} 
+}

@@ -5,7 +5,7 @@ import './nano.css'
 import BrowserWarning from '../components/BrowserWarning'
 import { useLanguage } from '../i18n/LanguageContext'
 import ShareModal from '../components/ShareModal'
-import FreeQuotaModal from '../components/FreeQuotaModal'
+import QuotaModal from '../components/QuotaModal'
 import { getDefaultApiConfig, loadApiConfig, saveApiConfig, type ApiConfig } from '../lib/api-config'
 
 type Mode = 'upload' | 'text'
@@ -72,42 +72,26 @@ export default function NanoPage() {
     { icon: '🔍', text: '详细分析', value: '在原图基础上添加详细的标注说明，分析图片内容和关键元素' }
   ]
 
-  const showcaseSections = [
+  const valuePropositions = [
     {
-      title: '时光档案',
-      subtitle: '复古胶片、年代海报、记忆修复与叙事感画面',
-      prompts: [
-        '1980年代街头肖像，胶片颗粒，暖黄路灯，纪实构图',
-        '老照片修复成高质感彩色人像，保持年代氛围',
-        '90年代校园宣传海报，中文标题，出版级排版'
-      ]
+      label: '文字生图',
+      title: '输入文字，秒出好图',
+      description: '产品描述、卖点文案直接生成高质量营销素材'
     },
     {
-      title: '高密度文字设计',
-      subtitle: '杂志封面、展览主视觉、品牌排版与海报语言',
-      prompts: [
-        '先锋时尚杂志封面，黑白主图，大字号中文标题',
-        '科技发布会海报，极简网格排版，橙色强调信息',
-        '咖啡品牌菜单页，留白克制，细节精致'
-      ]
+      label: '商业风格',
+      title: '一套文案，多版产出',
+      description: '白底图、场景图、海报等视觉方向快速切换'
     },
     {
-      title: 'UI 与产品界面',
-      subtitle: '高保真工作台、App 截图、运营看板与交互界面',
-      prompts: [
-        '深色模式 AI 图片工作台，简洁控件，专业产品截图',
-        '电商数据分析后台，橙色状态标签，克制布局',
-        '移动端拍照修图 App 首页，现代玻璃质感'
-      ]
+      label: '降本增效',
+      title: '低成本验证视觉创意',
+      description: '传统拍摄3天/3000元，AI生成3秒完成首轮验证'
     },
     {
-      title: '超写实场景',
-      subtitle: '人物、产品、梗图与社交传播感强的高逼真画面',
-      prompts: [
-        '戴墨镜的柴犬坐在复古敞篷车里，夏日广告质感',
-        '护肤品微距海报，水珠细节，棚拍灯光',
-        '都市女性街拍，电影感逆光，真实肤质'
-      ]
+      label: '垂类优化',
+      title: '更懂智能硬件与消费电子',
+      description: '基于真实投放数据训练，贴近电商与营销场景'
     }
   ]
 
@@ -535,7 +519,7 @@ export default function NanoPage() {
   const getModelDisplayName = (model: Model): string => {
     switch (model) {
       case 'gemini-3-pro-image-preview':
-        return language === 'zh' ? 'NanoBanana2 (Gemini 3 Pro)' : 'NanoBanana2 (Gemini 3 Pro)'
+        return language === 'zh' ? '元图旗舰 (Gemini 3 Pro)' : 'YuanTu Flagship (Gemini 3 Pro)'
       case 'gemini':
         return language === 'zh' ? 'Gemini 2.5 Flash' : 'Gemini 2.5 Flash'
       case 'openai':
@@ -612,11 +596,11 @@ export default function NanoPage() {
   const resultSummaryText = result?.text || result?.content || result?.message || ''
 
   return (
-    <div style={{ 
+    <div className="yuantu-theme" style={{
       minHeight: '100vh',
-      background: 'radial-gradient(circle at top, rgba(245, 158, 11, 0.16), transparent 28%), linear-gradient(180deg, #090909 0%, #0d0d0d 42%, #121212 100%)',
+      background: 'linear-gradient(180deg, #f8fbff 0%, #edf6ff 100%)',
       color: '#ffffff',
-      fontFamily: '"Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif'
+      fontFamily: 'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif'
     }}>
       {/* 浏览器兼容性警告 */}
       <BrowserWarning />
@@ -653,7 +637,7 @@ export default function NanoPage() {
               placeItems: 'center',
               boxShadow: '0 10px 30px rgba(245, 158, 11, 0.32)'
             }}>
-              <span style={{ fontSize: '1.2rem' }}>🍌</span>
+              <span style={{ fontSize: '1.2rem' }}>元</span>
             </div>
             <div>
               <p style={{
@@ -663,7 +647,7 @@ export default function NanoPage() {
                 color: '#fbbf24',
                 textTransform: 'uppercase'
               }}>
-                AIGC STUDIO
+                IMAGE ENGINE
               </p>
               <h1 style={{
                 margin: '0.2rem 0 0',
@@ -671,7 +655,7 @@ export default function NanoPage() {
                 fontWeight: 700,
                 letterSpacing: '0.03em'
               }}>
-                Nano Banana
+                元图引擎
               </h1>
             </div>
           </div>
@@ -755,11 +739,10 @@ export default function NanoPage() {
         </div>
       </header>
 
-      <main style={{ maxWidth: '1280px', margin: '0 auto', padding: '2rem 1.2rem 4rem' }}>
-      <section style={{
-        textAlign: 'center',
-        margin: '0 auto 1.5rem',
-        maxWidth: '780px'
+      <main style={{ maxWidth: '1200px', margin: '0 auto', padding: '1.5rem 1.2rem 4rem' }}>
+      <section className="hero-panel" style={{
+        margin: '0 auto 1.25rem',
+        maxWidth: '1120px'
       }}>
         <div style={{
           display: 'inline-flex',
@@ -774,37 +757,50 @@ export default function NanoPage() {
           letterSpacing: '0.06em',
           textTransform: 'uppercase'
         }}>
-          <span>Images Workflow</span>
+          <span>Commercial Visual Engine</span>
           <span style={{ color: '#6b7280' }}>•</span>
           <span>{mode === 'text' ? 'Text to Image' : 'Image Editing'}</span>
         </div>
-        <h2 style={{
-          margin: '1rem 0 0.8rem',
-          fontSize: 'clamp(2.6rem, 8vw, 5.2rem)',
-          lineHeight: 0.95,
-          letterSpacing: '-0.05em',
-          fontWeight: 800
-        }}>
-          生成一张
-          <span style={{
-            display: 'block',
-            background: 'linear-gradient(135deg, #f8fafc, #f59e0b 56%, #fb7185 100%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text'
-          }}>
-            更像作品的图片
-          </span>
-        </h2>
-        <p style={{
-          margin: '0 auto',
-          maxWidth: '620px',
-          color: '#9ca3af',
-          fontSize: '1rem',
-          lineHeight: 1.7
-        }}>
-          参考图库级工作流重构。把模型、比例、尺寸和输入动作压缩到一个工作台里，让生成、编辑和试错都更快。
-        </p>
+        <div className="hero-grid">
+          <div>
+            <h2 className="hero-title">
+              元图引擎
+              <span>AI商业视觉引擎</span>
+            </h2>
+            <p className="hero-copy">
+              你的品牌还在为“拍图慢、改图贵、素材不够用”发愁吗？元界跃迁自研AI智能体元图引擎，专为品牌营销与电商场景打造。
+            </p>
+            <p className="hero-status">
+              已内测上线，欢迎预约体验。
+            </p>
+          </div>
+          <div className="hero-metrics" aria-label="商业视觉能力">
+            <div>
+              <strong>3s</strong>
+              <span>首轮视觉验证</span>
+            </div>
+            <div>
+              <strong>3+</strong>
+              <span>商业图片方向</span>
+            </div>
+            <div>
+              <strong>AI</strong>
+              <span>品牌营销智能体</span>
+            </div>
+          </div>
+        </div>
+        <div className="value-grid">
+          {valuePropositions.map((item) => (
+            <div
+              key={item.title}
+              className="value-card"
+            >
+              <span>{item.label}</span>
+              <strong>{item.title}</strong>
+              <p>{item.description}</p>
+            </div>
+          ))}
+        </div>
       </section>
 
       {/* Mode Selector */}
@@ -1609,23 +1605,6 @@ export default function NanoPage() {
             )}
 
             <div style={{ marginBottom: '1.5rem' }}>
-              {/* 免费服务提示 */}
-              <div style={{
-                backgroundColor: '#0f2419',
-                border: '1px solid #10b981',
-                borderRadius: '0.5rem',
-                padding: '0.75rem',
-                marginBottom: '1rem',
-                textAlign: 'center'
-              }}>
-                <div style={{ color: '#10b981', fontSize: '0.9rem', fontWeight: 'bold', marginBottom: '0.25rem' }}>
-                  {t.freeService.title}
-                </div>
-                <p style={{ color: '#ccc', fontSize: '0.8rem', margin: '0' }}>
-                  {t.freeService.description}
-                </p>
-              </div>
-
               <p style={{ fontSize: '0.8rem', color: '#666', marginTop: '1rem' }}>
                 {t.aiOptions.tip}
               </p>
@@ -1862,7 +1841,7 @@ export default function NanoPage() {
                           const url = URL.createObjectURL(blob)
                           const a = document.createElement('a')
                           a.href = url
-                          a.download = `nano-banana-${Date.now()}.png`
+                          a.download = `yuantu-engine-${Date.now()}.png`
                           document.body.appendChild(a)
                           a.click()
                           document.body.removeChild(a)
@@ -2008,116 +1987,36 @@ export default function NanoPage() {
         </div>
       )}
 
-      <section style={{ marginTop: '3rem' }}>
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          gap: '1rem',
-          alignItems: 'end',
-          flexWrap: 'wrap',
-          marginBottom: '1.4rem'
-        }}>
-          <div>
-            <p style={{ margin: 0, color: '#f59e0b', letterSpacing: '0.18em', fontSize: '0.78rem', textTransform: 'uppercase' }}>
-              Prompt Gallery
-            </p>
-            <h3 style={{ margin: '0.4rem 0 0', fontSize: '1.8rem', lineHeight: 1.1 }}>
-              像参考站一样，把案例当成工作流入口
-            </h3>
+      <section className="examples-section" style={{ marginTop: '3rem' }}>
+        <h2>{t.examples.title}</h2>
+        <div className="examples-grid">
+          <div className="example-card">
+            <h3>{t.examples.textToImage.title}</h3>
+            <p><strong>{t.examples.textToImage.prompt}</strong>{t.examples.textToImage.promptExample}</p>
+            <p><strong>{t.examples.textToImage.style}</strong>{t.examples.textToImage.styleValue}</p>
+            <p><strong>{t.examples.textToImage.count}</strong>{t.examples.textToImage.countValue}</p>
           </div>
-          <p style={{ margin: 0, maxWidth: '480px', color: '#9ca3af', fontSize: '0.95rem', lineHeight: 1.7 }}>
-            每组案例都能直接回填到输入框。与其堆很多说明卡片，不如让灵感素材自己解释模型适合做什么。
-          </p>
-        </div>
-
-        <div style={{ display: 'grid', gap: '1rem' }}>
-          {showcaseSections.map((section, sectionIndex) => (
-            <div
-              key={section.title}
-              style={{
-                borderRadius: '1.6rem',
-                border: '1px solid rgba(255,255,255,0.08)',
-                background: 'linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.015))',
-                padding: '1.25rem'
-              }}
-            >
-              <div style={{ marginBottom: '1rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.35rem' }}>
-                  <span style={{
-                    width: '1.9rem',
-                    height: '1.9rem',
-                    borderRadius: '999px',
-                    background: sectionIndex % 2 === 0 ? 'rgba(245, 158, 11, 0.16)' : 'rgba(99, 102, 241, 0.18)',
-                    color: sectionIndex % 2 === 0 ? '#fbbf24' : '#a5b4fc',
-                    display: 'grid',
-                    placeItems: 'center',
-                    fontSize: '0.88rem',
-                    fontWeight: 700
-                  }}>
-                    0{sectionIndex + 1}
-                  </span>
-                  <h4 style={{ margin: 0, fontSize: '1.15rem' }}>{section.title}</h4>
-                </div>
-                <p style={{ margin: 0, color: '#9ca3af', fontSize: '0.92rem', lineHeight: 1.65 }}>
-                  {section.subtitle}
-                </p>
-              </div>
-
-              <div className="examples-grid" style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-                gap: '0.85rem'
-              }}>
-                {section.prompts.map((item) => (
-                  <button
-                    key={item}
-                    onClick={() => {
-                      setMode('text')
-                      setPrompt(item)
-                    }}
-                    style={{
-                      textAlign: 'left',
-                      padding: '1rem',
-                      borderRadius: '1rem',
-                      border: '1px solid rgba(255,255,255,0.08)',
-                      background: 'rgba(255,255,255,0.02)',
-                      color: '#f3f4f6',
-                      cursor: 'pointer',
-                      minHeight: '132px'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.transform = 'translateY(-3px)'
-                      e.currentTarget.style.borderColor = 'rgba(245, 158, 11, 0.45)'
-                      e.currentTarget.style.boxShadow = '0 14px 34px rgba(0,0,0,0.22)'
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.transform = 'translateY(0)'
-                      e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'
-                      e.currentTarget.style.boxShadow = 'none'
-                    }}
-                  >
-                    <div style={{
-                      width: '100%',
-                      height: '72px',
-                      borderRadius: '0.8rem',
-                      marginBottom: '0.85rem',
-                      background: sectionIndex % 2 === 0
-                        ? 'linear-gradient(135deg, rgba(245,158,11,0.3), rgba(251,113,133,0.16), rgba(255,255,255,0.03))'
-                        : 'linear-gradient(135deg, rgba(99,102,241,0.28), rgba(34,211,238,0.16), rgba(255,255,255,0.03))'
-                    }} />
-                    <p style={{
-                      margin: 0,
-                      fontSize: '0.92rem',
-                      lineHeight: 1.65,
-                      color: '#e5e7eb'
-                    }}>
-                      {item}
-                    </p>
-                  </button>
-                ))}
-              </div>
-            </div>
-          ))}
+          <div className="example-card">
+            <h3>{t.examples.imageEdit.title}</h3>
+            <p><strong>{t.examples.imageEdit.operation}</strong></p>
+            <p>{t.examples.imageEdit.step1}</p>
+            <p>{t.examples.imageEdit.step2}</p>
+            <p><strong>{t.examples.imageEdit.style}</strong>{t.examples.imageEdit.styleValue}</p>
+          </div>
+          <div className="example-card">
+            <h3>{t.examples.tips.title}</h3>
+            <p><strong>{t.examples.tips.good}</strong></p>
+            <p>{t.examples.tips.goodTips}</p>
+            <p><strong>{t.examples.tips.avoid}</strong></p>
+            <p>{t.examples.tips.avoidTips}</p>
+          </div>
+          <div className="example-card">
+            <h3>{t.examples.templates.title}</h3>
+            <p><strong>{t.examples.templates.landscape}</strong>{t.examples.templates.landscapeExample}</p>
+            <p><strong>{t.examples.templates.portrait}</strong>{t.examples.templates.portraitExample}</p>
+            <p><strong>{t.examples.templates.art}</strong>{t.examples.templates.artExample}</p>
+            <p><strong>{t.examples.templates.scifi}</strong>{t.examples.templates.scifiExample}</p>
+          </div>
         </div>
       </section>
       </main>
@@ -2214,8 +2113,8 @@ export default function NanoPage() {
         />
       )}
 
-      {/* Free Quota Modal */}
-      <FreeQuotaModal
+      {/* Quota Modal */}
+      <QuotaModal
         isOpen={showQuotaModal}
         onClose={handleCloseQuotaModal}
       />

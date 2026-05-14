@@ -340,7 +340,7 @@ export default function UserAuth({ onAuth, onCreditsUpdate, triggerText = '🚀 
                   borderRadius: '999px',
                   fontSize: '0.85rem'
                 }}>
-                  🎁 登录之后可免费试用
+                  🎁 登录之后可继续体验
                 </span>
               </div>
             </div>

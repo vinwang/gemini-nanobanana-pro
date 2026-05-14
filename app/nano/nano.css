@@ -1,4 +1,4 @@
-/* Custom styles for Nano Banana interface */
+/* Custom styles for YuanTu Engine interface */
 
 /* Global smooth transitions */
 * {
@@ -376,7 +376,346 @@ textarea {
 
 textarea:focus {
   outline: none;
-  border-color: #10b981 !important;
+  border-color: #2563eb !important;
+}
+
+/* YuanTu Engine blue-white theme overrides */
+.yuantu-theme {
+  background:
+    radial-gradient(circle at 18% 0%, rgba(37, 99, 235, 0.18), transparent 26%),
+    radial-gradient(circle at 82% 8%, rgba(6, 182, 212, 0.14), transparent 24%),
+    linear-gradient(180deg, #f8fbff 0%, #eef6ff 46%, #ffffff 100%) !important;
+  color: #0f172a !important;
+  font-size: 16px;
+  letter-spacing: 0;
+}
+
+.yuantu-theme header {
+  background-color: rgba(255, 255, 255, 0.86) !important;
+  border-bottom: 1px solid rgba(37, 99, 235, 0.14) !important;
+  box-shadow: 0 12px 32px rgba(37, 99, 235, 0.08) !important;
+}
+
+.yuantu-theme .hero-panel {
+  position: relative;
+  overflow: hidden;
+  padding: 2rem;
+  border: 1px solid rgba(37, 99, 235, 0.16);
+  border-radius: 24px;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(239, 246, 255, 0.86)),
+    linear-gradient(90deg, rgba(37, 99, 235, 0.04) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(37, 99, 235, 0.04) 1px, transparent 1px);
+  background-size: auto, 32px 32px, 32px 32px;
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.10);
+}
+
+.yuantu-theme .hero-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 2rem;
+  align-items: end;
+  margin-top: 1rem;
+}
+
+.yuantu-theme .hero-title {
+  margin: 0;
+  max-width: 760px;
+  color: #0f172a !important;
+  font-size: clamp(2.4rem, 6vw, 4.8rem);
+  line-height: 1.02;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+.yuantu-theme .hero-title span {
+  display: block;
+  margin-top: 0.3rem;
+  color: #2563eb !important;
+}
+
+.yuantu-theme .hero-copy {
+  max-width: 680px;
+  margin: 1rem 0 0;
+  color: #334155 !important;
+  font-size: 1.05rem;
+  line-height: 1.72;
+}
+
+.yuantu-theme .hero-status {
+  display: inline-flex;
+  margin: 1rem 0 0;
+  padding: 0.55rem 0.85rem;
+  border: 1px solid rgba(37, 99, 235, 0.18);
+  border-radius: 999px;
+  background: rgba(219, 234, 254, 0.62);
+  color: #1d4ed8 !important;
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.yuantu-theme .hero-metrics {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.yuantu-theme .hero-metrics div {
+  padding: 1rem;
+  border: 1px solid rgba(37, 99, 235, 0.14);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.78);
+}
+
+.yuantu-theme .hero-metrics strong {
+  display: block;
+  color: #0f172a;
+  font-size: 1.75rem;
+  line-height: 1;
+  font-weight: 800;
+}
+
+.yuantu-theme .hero-metrics span {
+  display: block;
+  margin-top: 0.45rem;
+  color: #64748b !important;
+  font-size: 0.88rem;
+}
+
+.yuantu-theme .value-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-top: 1.35rem;
+}
+
+.yuantu-theme .value-card {
+  padding: 1rem;
+  border: 1px solid rgba(37, 99, 235, 0.14);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.76);
+}
+
+.yuantu-theme .value-card span {
+  display: inline-flex;
+  margin-bottom: 0.7rem;
+  color: #2563eb !important;
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.yuantu-theme .value-card strong {
+  display: block;
+  color: #0f172a;
+  font-size: 1rem;
+  line-height: 1.45;
+}
+
+.yuantu-theme .value-card p {
+  margin: 0.45rem 0 0;
+  color: #64748b !important;
+  font-size: 0.9rem;
+  line-height: 1.62;
+}
+
+.yuantu-theme section,
+.yuantu-theme .upload-area,
+.yuantu-theme .text-input-area,
+.yuantu-theme .result-section > div,
+.yuantu-theme .error-section > div,
+.yuantu-theme [style*="#111111"],
+.yuantu-theme [style*="#1a1a1a"],
+.yuantu-theme [style*="rgba(255,255,255,0.03)"],
+.yuantu-theme [style*="rgba(255,255,255,0.035)"],
+.yuantu-theme [style*="rgba(255,255,255,0.02)"] {
+  background: rgba(255, 255, 255, 0.82) !important;
+  border-color: rgba(37, 99, 235, 0.14) !important;
+  box-shadow: 0 18px 48px rgba(37, 99, 235, 0.10) !important;
+  color: #0f172a !important;
+}
+
+.yuantu-theme [style*="#f59e0b"],
+.yuantu-theme [style*="#fbbf24"],
+.yuantu-theme [style*="#10b981"],
+.yuantu-theme [style*="#059669"] {
+  color: #2563eb !important;
+  border-color: #2563eb !important;
+}
+
+.yuantu-theme button,
+.yuantu-theme label[for="file-upload"] {
+  border-color: rgba(37, 99, 235, 0.22) !important;
+  min-height: 44px;
+}
+
+.yuantu-theme button[style*="linear-gradient"],
+.yuantu-theme label[for="file-upload"],
+.yuantu-theme .button-enhanced {
+  background: linear-gradient(135deg, #2563eb, #0ea5e9) !important;
+  color: #ffffff !important;
+  box-shadow: 0 10px 26px rgba(37, 99, 235, 0.24) !important;
+}
+
+.yuantu-theme button[disabled] {
+  background: #e5e7eb !important;
+  color: #64748b !important;
+  box-shadow: none !important;
+}
+
+.yuantu-theme textarea,
+.yuantu-theme input {
+  background: #ffffff !important;
+  border-color: rgba(37, 99, 235, 0.20) !important;
+  color: #0f172a !important;
+  box-shadow: inset 0 1px 0 rgba(37, 99, 235, 0.04) !important;
+}
+
+.yuantu-theme textarea::placeholder,
+.yuantu-theme input::placeholder {
+  color: #94a3b8 !important;
+}
+
+.yuantu-theme p,
+.yuantu-theme h1,
+.yuantu-theme h2,
+.yuantu-theme h3,
+.yuantu-theme h4,
+.yuantu-theme span,
+.yuantu-theme div {
+  text-shadow: none !important;
+}
+
+.yuantu-theme p,
+.yuantu-theme [style*="#888"],
+.yuantu-theme [style*="#9ca3af"],
+.yuantu-theme [style*="#666"],
+.yuantu-theme [style*="#6b7280"],
+.yuantu-theme [style*="#ccc"],
+.yuantu-theme [style*="#d1d5db"],
+.yuantu-theme [style*="#e5e7eb"],
+.yuantu-theme [style*="#f3f4f6"],
+.yuantu-theme [style*="#f8fafc"] {
+  color: #475569 !important;
+}
+
+.yuantu-theme h1,
+.yuantu-theme h2,
+.yuantu-theme h3,
+.yuantu-theme h4 {
+  color: #0f172a !important;
+  letter-spacing: 0;
+}
+
+.yuantu-theme h2 {
+  font-size: clamp(1.6rem, 3vw, 2.2rem);
+  line-height: 1.16;
+}
+
+.yuantu-theme h3 {
+  font-size: 1.08rem;
+  line-height: 1.35;
+}
+
+.yuantu-theme .image-preview,
+.yuantu-theme .result-image {
+  border-color: rgba(37, 99, 235, 0.28) !important;
+  box-shadow: 0 18px 42px rgba(15, 23, 42, 0.14) !important;
+}
+
+.yuantu-theme ::-webkit-scrollbar-track {
+  background: #dbeafe;
+}
+
+.yuantu-theme ::-webkit-scrollbar-thumb {
+  background: #93c5fd;
+}
+
+.yuantu-theme ::-webkit-scrollbar-thumb:hover {
+  background: #60a5fa;
+}
+
+.yuantu-theme .examples-section {
+  padding: 0;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+.yuantu-theme .examples-section > h2 {
+  margin: 0 0 1rem;
+  font-size: 1.65rem;
+  line-height: 1.2;
+}
+
+.yuantu-theme .examples-section .examples-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.yuantu-theme .example-card {
+  min-height: 100%;
+  padding: 1.25rem;
+  border: 1px solid rgba(37, 99, 235, 0.14);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.84);
+  box-shadow: 0 14px 38px rgba(15, 23, 42, 0.07);
+}
+
+.yuantu-theme .example-card h3 {
+  margin: 0 0 0.9rem;
+  color: #0f172a !important;
+}
+
+.yuantu-theme .example-card p {
+  margin: 0 0 0.75rem;
+  white-space: pre-line;
+  color: #475569 !important;
+  font-size: 0.92rem;
+  line-height: 1.68;
+}
+
+.yuantu-theme .example-card p:last-child {
+  margin-bottom: 0;
+}
+
+.yuantu-theme .example-card strong {
+  color: #1d4ed8;
+  font-weight: 700;
+}
+
+@media (max-width: 1024px) {
+  .yuantu-theme .hero-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .yuantu-theme .hero-metrics {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .yuantu-theme .value-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .yuantu-theme .hero-panel {
+    padding: 1.25rem;
+    border-radius: 18px;
+  }
+
+  .yuantu-theme .hero-title {
+    font-size: 2.35rem;
+  }
+
+  .yuantu-theme .hero-copy {
+    font-size: 1rem;
+  }
+
+  .yuantu-theme .hero-metrics,
+  .yuantu-theme .value-grid,
+  .yuantu-theme .examples-section .examples-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* Button hover effects */

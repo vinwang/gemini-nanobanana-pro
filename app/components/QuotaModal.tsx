@@ -2,12 +2,12 @@
 
 import React from 'react'
 
-interface FreeQuotaModalProps {
+interface QuotaModalProps {
   isOpen: boolean
   onClose: () => void
 }
 
-export default function FreeQuotaModal({ isOpen, onClose }: FreeQuotaModalProps) {
+export default function QuotaModal({ isOpen, onClose }: QuotaModalProps) {
   if (!isOpen) return null
 
   return (
@@ -73,7 +73,7 @@ export default function FreeQuotaModal({ isOpen, onClose }: FreeQuotaModalProps)
               fontWeight: 'bold'
             }}
           >
-            免费额度已耗尽
+            体验额度已耗尽
           </h3>
         </div>
 
@@ -96,7 +96,7 @@ export default function FreeQuotaModal({ isOpen, onClose }: FreeQuotaModalProps)
               textAlign: 'center'
             }}
           >
-            您的免费使用额度已用完
+            您的当前体验额度已用完
             <br />
             如需继续使用，请前往获取 API 令牌
           </p>

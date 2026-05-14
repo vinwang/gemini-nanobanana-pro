@@ -2,10 +2,10 @@ export const translations = {
   zh: {
     // Header
     header: {
-      title: '🍌 Nano Banana - 免费 AI 图像生成',
-      subtitle: '100% 免费',
-      poweredBy: '由 nanobanana 提供支持',
-      noLogin: '无需登录',
+      title: '元图引擎 · AI商业视觉引擎',
+      subtitle: '商业视觉生成',
+      poweredBy: '由元图引擎提供支持',
+      noLogin: '快速体验',
       unlimited: '无限生成'
     },
 
@@ -18,11 +18,11 @@ export const translations = {
     // Model Selector
     model: {
       label: 'AI模型:',
-      gemini3pro: '🚀 NanoBanana2 (Gemini 3 Pro)',
+      gemini3pro: '🚀 元图旗舰 (Gemini 3 Pro)',
       gemini: '🤖 Gemini 2.5 Flash',
       openai: '🖼️ OpenAI GPT Image 2',
       doubao: '🚧 豆包模型(待开发)',
-      doubaoTip: '豆包模型功能正在开发中，敬请期待！目前请使用 NanoBanana2 (Gemini 3 Pro) 模型。',
+      doubaoTip: '豆包模型功能正在开发中，敬请期待！目前请使用元图旗舰 (Gemini 3 Pro) 模型。',
       size: '尺寸:'
     },
 
@@ -85,18 +85,18 @@ export const translations = {
       tip: '💡 提示：描述越详细，生成的图像越接近你的想象'
     },
 
-    // Free Service
+    // Service Hint
     freeService: {
-      title: '🎉 完全免费使用',
-      description: '无需注册，无需付费，AI 图像生成完全免费！'
+      title: '🎉 商业视觉生成',
+      description: '输入产品信息与卖点，快速生成营销视觉素材'
     },
 
     // Generate Button
     generate: {
       generating: '生成中...',
       uploading: '上传中...',
-      button: '🎨 完全免费生成',
-      badge: '💎 ∞ 免费',
+      button: '🎨 开始生成',
+      badge: '商业素材',
       requirement: '请输入至少 3 个字符的描述'
     },
 
@@ -205,10 +205,10 @@ export const translations = {
   en: {
     // Header
     header: {
-      title: '🍌 Nano Banana - Free AI Image Generation',
-      subtitle: '100% Free',
-      poweredBy: 'Powered by nanobanana',
-      noLogin: 'No Login Required',
+      title: 'YuanTu Engine - AI Commercial Visual Engine',
+      subtitle: 'Commercial Visual Generation',
+      poweredBy: 'Powered by YuanTu Engine',
+      noLogin: 'Quick Trial',
       unlimited: 'Unlimited Generation'
     },
 
@@ -221,11 +221,11 @@ export const translations = {
     // Model Selector
     model: {
       label: 'AI Model:',
-      gemini3pro: '🚀 NanoBanana2 (Gemini 3 Pro)',
+      gemini3pro: '🚀 YuanTu Flagship (Gemini 3 Pro)',
       gemini: '🤖 Gemini 2.5 Flash',
       openai: '🖼️ OpenAI GPT Image 2',
       doubao: '🚧 Doubao Model (Coming Soon)',
-      doubaoTip: 'Doubao model is under development, stay tuned! Please use NanoBanana2 (Gemini 3 Pro) model for now.',
+      doubaoTip: 'Doubao model is under development, stay tuned! Please use YuanTu Flagship (Gemini 3 Pro) model for now.',
       size: 'Size:'
     },
 
@@ -288,18 +288,18 @@ export const translations = {
       tip: '💡 Tip: More detailed descriptions lead to better results'
     },
 
-    // Free Service
+    // Service Hint
     freeService: {
-      title: '🎉 Completely Free',
-      description: 'No registration, no payment, AI image generation is completely free!'
+      title: '🎉 Commercial Visual Generation',
+      description: 'Enter product information and selling points to create marketing visuals'
     },
 
     // Generate Button
     generate: {
       generating: 'Generating...',
       uploading: 'Uploading...',
-      button: '🎨 Generate for Free',
-      badge: '💎 ∞ Free',
+      button: '🎨 Generate',
+      badge: 'Commercial',
       requirement: 'Please enter at least 3 characters'
     },
 

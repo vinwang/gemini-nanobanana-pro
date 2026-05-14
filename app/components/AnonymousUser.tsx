@@ -47,18 +47,18 @@ export default function AnonymousUser({ onSessionReady, forceShowLogin, onLoginC
       if (response.ok && data.success) {
         setRemainingUses(data.remainingFreeUses)
 
-        // 如果免费次数用完了，显示登录提示
+        // 如果体验次数用完了，显示登录提示
         if (data.remainingFreeUses <= 0 && !localStorage.getItem('nano_user_email')) {
           setShowLoginPrompt(true)
         }
       } else {
         console.error('获取剩余使用次数失败:', data.error)
-        // 如果API调用失败，默认设置为3次免费试用
+        // 如果API调用失败，默认设置为3次体验
         setRemainingUses(3)
       }
     } catch (error) {
       console.error('获取剩余使用次数网络错误:', error)
-      // 如果网络错误，默认设置为3次免费试用
+      // 如果网络错误，默认设置为3次体验
       setRemainingUses(3)
     }
   }
@@ -132,7 +132,7 @@ export default function AnonymousUser({ onSessionReady, forceShowLogin, onLoginC
             marginBottom: '1rem',
             fontSize: '1.5rem'
           }}>
-            免费试用已结束
+            体验已结束
           </h2>
 
           <p style={{
@@ -140,7 +140,7 @@ export default function AnonymousUser({ onSessionReady, forceShowLogin, onLoginC
             marginBottom: '1.5rem',
             lineHeight: '1.6'
           }}>
-            您的3次免费试用机会已用完！<br/>
+            您的3次体验机会已用完！<br/>
             登录账号继续享受更多AI图像生成功能。
           </p>
 
@@ -165,7 +165,7 @@ export default function AnonymousUser({ onSessionReady, forceShowLogin, onLoginC
               margin: '0',
               paddingLeft: '1.2rem'
             }}>
-              <li>5个免费积分</li>
+              <li>5个体验积分</li>
               <li>批量生成多张图片</li>
               <li>专业级AI引擎</li>
               <li>高速处理速度</li>
@@ -219,7 +219,7 @@ export default function AnonymousUser({ onSessionReady, forceShowLogin, onLoginC
     )
   }
 
-  // 显示剩余免费次数的状态栏
+  // 显示剩余体验次数的状态栏
   return (
     <div style={{
       display: 'flex',
@@ -235,11 +235,11 @@ export default function AnonymousUser({ onSessionReady, forceShowLogin, onLoginC
         {remainingUses > 0 ? '🎁' : '⚠️'}
       </span>
       <span style={{ color: '#fff', fontWeight: '500' }}>
-        免费试用: {remainingUses}/3 次
+        体验额度: {remainingUses}/3 次
       </span>
       {remainingUses > 0 && (
         <span style={{ color: '#888', fontSize: '0.8rem' }}>
-          (无需登录)
+          (当前会话)
         </span>
       )}
     </div>
