@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import {
   createApiErrorResponse,
   detectApiErrorCode,
-  detectApiErrorCodeFromException
+  detectApiErrorCodeFromException,
+  extractApiErrorDetail
 } from '@/app/lib/api-error'
 import {
   buildGrsaiResultRequest,
@@ -51,7 +52,11 @@ async function grsaiResultHandler(request: NextRequest) {
 
     if (!response.ok) {
       return NextResponse.json(
-        createApiErrorResponse(detectApiErrorCode(payload, response.status), response.status),
+        createApiErrorResponse(
+          detectApiErrorCode(payload, response.status),
+          response.status,
+          extractApiErrorDetail(payload)
+        ),
         { status: response.status }
       )
     }

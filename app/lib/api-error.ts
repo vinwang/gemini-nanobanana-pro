@@ -15,10 +15,15 @@ type UpstreamErrorShape = {
  * @param status HTTP 状态码
  * @returns 标准化错误响应对象
  */
-export function createApiErrorResponse(code: ApiErrorCode, status: number): ResponsePayload {
+export function createApiErrorResponse(
+  code: ApiErrorCode,
+  status: number,
+  detail?: string
+): ResponsePayload {
   return {
     error: mapErrorCodeToMessage(code),
     code,
+    detail,
     status
   }
 }
@@ -69,6 +74,27 @@ export function detectApiErrorCode(payload: unknown, status: number): ApiErrorCo
 }
 
 /**
+ * 提取可安全展示的上游错误摘要
+ * @param payload 上游接口返回体
+ * @returns 错误摘要字符串
+ */
+export function extractApiErrorDetail(payload: unknown): string | undefined {
+  const errorPayload = payload as UpstreamErrorShape
+  if (typeof errorPayload?.error === 'string') {
+    return errorPayload.error
+  }
+
+  const parts = [
+    errorPayload?.error?.code,
+    errorPayload?.error?.type,
+    errorPayload?.error?.message,
+    errorPayload?.raw
+  ].filter((part): part is string => typeof part === 'string' && part.length > 0)
+
+  return parts.length > 0 ? parts.join(' | ') : undefined
+}
+
+/**
  * 从异常对象推断错误分类
  * @param error 捕获到的异常
  * @returns 归一化后的错误分类
@@ -105,7 +131,7 @@ export function mapErrorCodeToMessage(code: ApiErrorCode): string {
     case 'AUTH':
       return 'API 密钥无效或已过期，请检查配置后重试'
     case 'CONFIG':
-      return 'API 配置缺失，请先在环境变量或页面设置中填写密钥'
+      return 'API 配置缺失，请先配置密钥'
     case 'NETWORK':
       return '连接图片服务失败，请稍后重试'
     case 'RATE_LIMIT':
@@ -123,6 +149,7 @@ export function mapErrorCodeToMessage(code: ApiErrorCode): string {
 
 type ResponsePayload = {
   code: ApiErrorCode
+  detail?: string
   error: string
   status: number
 }

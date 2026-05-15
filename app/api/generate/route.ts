@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import {
   createApiErrorResponse,
   detectApiErrorCode,
-  detectApiErrorCodeFromException
+  detectApiErrorCodeFromException,
+  extractApiErrorDetail
 } from '@/app/lib/api-error'
 import {
   buildGrsaiImageRequest,
@@ -29,11 +30,11 @@ async function generateHandler(request: NextRequest) {
       return NextResponse.json({ error: '请提供描述' }, { status: 400 })
     }
 
-    // 优先使用前端传来的自定义配置，否则使用环境变量
+    // 从服务端环境变量读取配置；保留请求值仅供内部调用复用。
     const { apiKey, apiUrl } = getMaynorApiConfig(customApiKey, customApiUrl)
 
     if (!apiKey) {
-      return NextResponse.json({ error: 'API配置缺失，请在页面右上角配置 API 密钥' }, { status: 500 })
+      return NextResponse.json({ error: 'API配置缺失，请先配置 API 密钥' }, { status: 500 })
     }
 
     const model = resolveProviderModel(customModel)
@@ -52,7 +53,11 @@ async function generateHandler(request: NextRequest) {
       const errorData = await response.json()
       console.error('API错误:', errorData)
       return NextResponse.json(
-        createApiErrorResponse(detectApiErrorCode(errorData, response.status), response.status),
+        createApiErrorResponse(
+          detectApiErrorCode(errorData, response.status),
+          response.status,
+          extractApiErrorDetail(errorData)
+        ),
         { status: response.status }
       )
     }

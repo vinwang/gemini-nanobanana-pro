@@ -6,7 +6,6 @@ import BrowserWarning from '../components/BrowserWarning'
 import { useLanguage } from '../i18n/LanguageContext'
 import ShareModal from '../components/ShareModal'
 import QuotaModal from '../components/QuotaModal'
-import { getDefaultApiConfig, loadApiConfig, saveApiConfig, type ApiConfig } from '../lib/api-config'
 
 type Mode = 'upload' | 'text'
 type Style = 'none' | 'enhance' | 'artistic' | 'anime' | 'photo'
@@ -15,8 +14,6 @@ type Model = 'gemini-3-pro-image-preview' | 'gemini' | 'openai' | 'doubao'
 const GRS_AI_POLL_INTERVAL_MS = 2500
 
 type GenerationRequestData = {
-  apiKey?: string
-  apiUrl?: string
   [key: string]: unknown
 }
 
@@ -43,12 +40,6 @@ export default function NanoPage() {
   const [errorModalMessage, setErrorModalMessage] = useState('')
   const [showShareModal, setShowShareModal] = useState(false)
   const [showQuotaModal, setShowQuotaModal] = useState(false)
-  const [showApiConfig, setShowApiConfig] = useState(false)
-  const [apiConfig, setApiConfig] = useState<ApiConfig>(() => getDefaultApiConfig())
-
-  useEffect(() => {
-    setApiConfig(loadApiConfig())
-  }, [])
 
   const quickPrompts = [
     { icon: '🏔️', text: '风景', value: '美丽的自然风景' },
@@ -281,7 +272,12 @@ export default function NanoPage() {
     return Promise.all(promises)
   }
 
-  // 显示错误弹窗的函数
+  /**
+   * 显示错误弹窗
+   * @param title 弹窗标题
+   * @param message 错误说明
+   * @returns 无返回值
+   */
   const showError = (title: string, message: string) => {
     setErrorModalTitle(title)
     setErrorModalMessage(message)
@@ -413,30 +409,11 @@ export default function NanoPage() {
       // 使用时间戳作为用户标识
       requestData.timestamp = Date.now()
 
-      // 始终传递 API 配置（后端会自动 fallback 到环境变量）
+      // API credentials stay server-side and are read from .env.local by API routes.
       if (model === 'gemini' || model === 'gemini-3-pro-image-preview') {
-        if (apiConfig.geminiApiKey) {
-          requestData.apiKey = apiConfig.geminiApiKey
-        }
-        if (apiConfig.geminiApiUrl) {
-          requestData.apiUrl = apiConfig.geminiApiUrl
-        }
         requestData.model = model
       } else if (model === 'openai') {
-        if (apiConfig.openaiApiKey) {
-          requestData.apiKey = apiConfig.openaiApiKey
-        }
-        if (shouldSendOpenAiUrl(apiConfig.openaiApiUrl, apiConfig.openaiApiKey)) {
-          requestData.apiUrl = apiConfig.openaiApiUrl
-        }
         requestData.model = 'gpt-image-2'
-      } else if (model === 'doubao') {
-        if (apiConfig.doubaoApiKey) {
-          requestData.apiKey = apiConfig.doubaoApiKey
-        }
-        if (apiConfig.doubaoApiUrl) {
-          requestData.apiUrl = apiConfig.doubaoApiUrl
-        }
       }
 
       const response = await fetch(apiEndpoint, {
@@ -482,7 +459,7 @@ export default function NanoPage() {
           showError('服务器错误', errorMsg)
           return
         }
-        const errorMsg = `生成失败：${data.error || '未知错误'}`
+        const errorMsg = data.error || '未知错误'
         showError('生成失败', errorMsg)
         return
       } else {
@@ -530,25 +507,6 @@ export default function NanoPage() {
       default:
         return model
     }
-  }
-
-  /**
-   * 判断是否需要把 OpenAI URL 作为前端覆盖配置发送给后端
-   * @param apiUrl 当前表单中的 OpenAI URL
-   * @param apiKey 当前表单中的 OpenAI Key
-   * @returns 是否发送 URL 覆盖值
-   */
-  const shouldSendOpenAiUrl = (apiUrl: string, apiKey: string): boolean => {
-    const normalizedUrl = apiUrl.trim()
-    if (!normalizedUrl) {
-      return false
-    }
-
-    if (normalizedUrl !== 'https://grsaiapi.com') {
-      return true
-    }
-
-    return Boolean(apiKey.trim())
   }
 
   // 下载图片
@@ -717,33 +675,6 @@ export default function NanoPage() {
             </button>
           </div>
 
-          <button
-            onClick={() => setShowApiConfig(true)}
-            style={{
-              padding: '0.55rem 1rem',
-              backgroundColor: 'rgba(255,255,255,0.04)',
-              color: '#e5e7eb',
-              border: '1px solid rgba(255,255,255,0.08)',
-              borderRadius: '999px',
-              cursor: 'pointer',
-              fontSize: '0.85rem',
-              fontWeight: 600,
-              transition: 'all 0.3s ease',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.borderColor = '#f59e0b'
-              e.currentTarget.style.color = '#fbbf24'
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'
-              e.currentTarget.style.color = '#e5e7eb'
-            }}
-          >
-            ⚙️ API配置
-          </button>
         </div>
         </div>
       </header>
@@ -1787,13 +1718,6 @@ export default function NanoPage() {
                   {t.result.title}
                 </h3>
               </div>
-              <p style={{
-                margin: 0,
-                color: '#9ca3af',
-                fontSize: '0.9rem'
-              }}>
-                结果固定停靠在工作台下方，便于继续调整 prompt 和模型。
-              </p>
             </div>
 
           {/* 图片显示 */}
@@ -1836,13 +1760,6 @@ export default function NanoPage() {
                 flexDirection: 'column',
                 gap: '0.85rem'
               }}>
-                <div style={{
-                  fontSize: '0.86rem',
-                  color: '#9ca3af',
-                  lineHeight: '1.6'
-                }}>
-                  下载、分享和结果摘要收纳到右侧，保持主视觉完整，操作也更顺手。
-                </div>
                 <div style={{
                   display: 'grid',
                   gap: '0.75rem'
@@ -2044,82 +1961,29 @@ export default function NanoPage() {
 
       {/* Error Modal */}
       {showErrorModal && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.8)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000
-        }}>
-          <div style={{
-            backgroundColor: '#1a1a1a',
-            borderRadius: '1rem',
-            padding: '2rem',
-            maxWidth: '500px',
-            width: '90%',
-            border: '1px solid #ef4444',
-            boxShadow: '0 20px 40px rgba(0, 0, 0, 0.5)'
-          }}>
-            <div style={{
-              textAlign: 'center',
-              marginBottom: '1.5rem'
-            }}>
-              <div style={{
-                fontSize: '3rem',
-                marginBottom: '1rem'
-              }}>
-                ⚠️
-              </div>
-              <h3 style={{
-                fontSize: '1.5rem',
-                color: '#ef4444',
-                marginBottom: '0.5rem',
-                fontWeight: 'bold'
-              }}>
-                {errorModalTitle}
-              </h3>
-              <p style={{
-                color: '#ccc',
-                fontSize: '1rem',
-                lineHeight: '1.5',
-                margin: 0
-              }}>
-                {errorModalMessage}
-              </p>
-            </div>
-            <div style={{
-              display: 'flex',
-              justifyContent: 'center'
-            }}>
+        <div className="error-modal-overlay" role="presentation">
+          <section
+            className="error-modal-panel"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="error-modal-title"
+          >
+            <div className="error-modal-mark" aria-hidden="true">!</div>
+            <h3 id="error-modal-title" className="error-modal-title">
+              {errorModalTitle}
+            </h3>
+            <p className="error-modal-message">
+              {errorModalMessage}
+            </p>
+            <div className="error-modal-actions">
               <button
+                className="error-modal-primary"
                 onClick={() => setShowErrorModal(false)}
-                style={{
-                  padding: '0.75rem 2rem',
-                  backgroundColor: '#ef4444',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '0.5rem',
-                  fontSize: '1rem',
-                  fontWeight: 'bold',
-                  cursor: 'pointer',
-                  transition: 'all 0.3s ease'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = '#dc2626'
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = '#ef4444'
-                }}
               >
                 确定
               </button>
             </div>
-          </div>
+          </section>
         </div>
       )}
 
@@ -2139,347 +2003,6 @@ export default function NanoPage() {
         isOpen={showQuotaModal}
         onClose={handleCloseQuotaModal}
       />
-
-      {/* API Config Modal */}
-      {showApiConfig && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.85)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000,
-          padding: '1rem'
-        }} onClick={() => setShowApiConfig(false)}>
-          <div style={{
-            backgroundColor: '#1a1a1a',
-            borderRadius: '1rem',
-            padding: '2rem',
-            maxWidth: '600px',
-            width: '100%',
-            border: '1px solid #333',
-            maxHeight: '90vh',
-            overflowY: 'auto'
-          }} onClick={(e) => e.stopPropagation()}>
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: '1.5rem'
-            }}>
-              <h2 style={{
-                fontSize: '1.5rem',
-                fontWeight: 'bold',
-                color: '#10b981',
-                margin: 0
-              }}>
-                ⚙️ API 配置
-              </h2>
-              <button
-                onClick={() => setShowApiConfig(false)}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: '#888',
-                  fontSize: '1.5rem',
-                  cursor: 'pointer',
-                  padding: '0.25rem',
-                  lineHeight: 1
-                }}
-              >
-                ×
-              </button>
-            </div>
-
-            <p style={{
-              color: '#888',
-              fontSize: '0.95rem',
-              marginBottom: '1.5rem',
-              lineHeight: '1.5'
-            }}>
-              配置自定义的 API 密钥和中转服务地址。留空则使用默认服务。
-              <br />
-              <a
-                href="https://grsaiapi.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ color: '#10b981', textDecoration: 'underline' }}
-              >
-                点击这里获取 API Key →
-              </a>
-            </p>
-
-            {/* Gemini API Config */}
-            <div style={{ marginBottom: '1.5rem' }}>
-              <h3 style={{
-                color: '#10b981',
-                fontSize: '1.1rem',
-                marginBottom: '1rem'
-              }}>
-                Gemini API
-              </h3>
-
-              <div style={{ marginBottom: '1rem' }}>
-                <label style={{
-                  display: 'block',
-                  color: '#ccc',
-                  marginBottom: '0.5rem',
-                  fontSize: '0.9rem'
-                }}>
-                  API Key
-                </label>
-                <input
-                  type="password"
-                  value={apiConfig.geminiApiKey}
-                  onChange={(e) => setApiConfig({ ...apiConfig, geminiApiKey: e.target.value })}
-                  placeholder="从默认服务获取"
-                  style={{
-                    width: '100%',
-                    padding: '0.75rem',
-                    backgroundColor: '#0a0a0a',
-                    border: '1px solid #333',
-                    borderRadius: '0.5rem',
-                    color: '#fff',
-                    fontSize: '0.95rem'
-                  }}
-                />
-              </div>
-
-              <div style={{ marginBottom: '1rem' }}>
-                <label style={{
-                  display: 'block',
-                  color: '#ccc',
-                  marginBottom: '0.5rem',
-                  fontSize: '0.9rem'
-                }}>
-                  API URL
-                </label>
-                <input
-                  type="text"
-                  value={apiConfig.geminiApiUrl}
-                  onChange={(e) => setApiConfig({ ...apiConfig, geminiApiUrl: e.target.value })}
-                  placeholder="https://grsaiapi.com"
-                  style={{
-                    width: '100%',
-                    padding: '0.75rem',
-                    backgroundColor: '#0a0a0a',
-                    border: '1px solid #333',
-                    borderRadius: '0.5rem',
-                    color: '#fff',
-                    fontSize: '0.95rem'
-                  }}
-                />
-              </div>
-            </div>
-
-            {/* OpenAI API Config */}
-            <div style={{ marginBottom: '1.5rem' }}>
-              <h3 style={{
-                color: '#f59e0b',
-                fontSize: '1.1rem',
-                marginBottom: '1rem'
-              }}>
-                OpenAI API
-              </h3>
-
-              <div style={{ marginBottom: '1rem' }}>
-                <label style={{
-                  display: 'block',
-                  color: '#ccc',
-                  marginBottom: '0.5rem',
-                  fontSize: '0.9rem'
-                }}>
-                  API Key
-                </label>
-                <input
-                  type="password"
-                  value={apiConfig.openaiApiKey}
-                  onChange={(e) => setApiConfig({ ...apiConfig, openaiApiKey: e.target.value })}
-                  placeholder="输入 OpenAI 或兼容网关的 API Key"
-                  style={{
-                    width: '100%',
-                    padding: '0.75rem',
-                    backgroundColor: '#0a0a0a',
-                    border: '1px solid #333',
-                    borderRadius: '0.5rem',
-                    color: '#fff',
-                    fontSize: '0.95rem'
-                  }}
-                />
-              </div>
-
-              <div style={{ marginBottom: '1rem' }}>
-                <label style={{
-                  display: 'block',
-                  color: '#ccc',
-                  marginBottom: '0.5rem',
-                  fontSize: '0.9rem'
-                }}>
-                  API URL
-                </label>
-                <input
-                  type="text"
-                  value={apiConfig.openaiApiUrl}
-                  onChange={(e) => setApiConfig({ ...apiConfig, openaiApiUrl: e.target.value })}
-                  placeholder="https://grsaiapi.com"
-                  style={{
-                    width: '100%',
-                    padding: '0.75rem',
-                    backgroundColor: '#0a0a0a',
-                    border: '1px solid #333',
-                    borderRadius: '0.5rem',
-                    color: '#fff',
-                    fontSize: '0.95rem'
-                  }}
-                />
-              </div>
-            </div>
-
-            {/* Doubao API Config */}
-            <div style={{ marginBottom: '2rem' }}>
-              <h3 style={{
-                color: '#10b981',
-                fontSize: '1.1rem',
-                marginBottom: '1rem'
-              }}>
-                Doubao API
-              </h3>
-
-              <div style={{ marginBottom: '1rem' }}>
-                <label style={{
-                  display: 'block',
-                  color: '#ccc',
-                  marginBottom: '0.5rem',
-                  fontSize: '0.9rem'
-                }}>
-                  API Key
-                </label>
-                <input
-                  type="password"
-                  value={apiConfig.doubaoApiKey}
-                  onChange={(e) => setApiConfig({ ...apiConfig, doubaoApiKey: e.target.value })}
-                  placeholder="从默认服务获取"
-                  style={{
-                    width: '100%',
-                    padding: '0.75rem',
-                    backgroundColor: '#0a0a0a',
-                    border: '1px solid #333',
-                    borderRadius: '0.5rem',
-                    color: '#fff',
-                    fontSize: '0.95rem'
-                  }}
-                />
-              </div>
-
-              <div style={{ marginBottom: '1rem' }}>
-                <label style={{
-                  display: 'block',
-                  color: '#ccc',
-                  marginBottom: '0.5rem',
-                  fontSize: '0.9rem'
-                }}>
-                  API URL
-                </label>
-                <input
-                  type="text"
-                  value={apiConfig.doubaoApiUrl}
-                  onChange={(e) => setApiConfig({ ...apiConfig, doubaoApiUrl: e.target.value })}
-                  placeholder="https://grsaiapi.com"
-                  style={{
-                    width: '100%',
-                    padding: '0.75rem',
-                    backgroundColor: '#0a0a0a',
-                    border: '1px solid #333',
-                    borderRadius: '0.5rem',
-                    color: '#fff',
-                    fontSize: '0.95rem'
-                  }}
-                />
-              </div>
-            </div>
-
-            {/* Info Box */}
-            <div style={{
-              backgroundColor: '#0a1a0a',
-              border: '1px solid #10b981',
-              borderRadius: '0.5rem',
-              padding: '1rem',
-              marginBottom: '1.5rem'
-            }}>
-              <p style={{
-                color: '#888',
-                fontSize: '0.85rem',
-                margin: 0,
-                lineHeight: '1.5'
-              }}>
-                💡 提示：配置保存在浏览器本地存储中，不会上传到服务器。自定义 API 密钥优先级高于默认服务。
-              </p>
-            </div>
-
-            {/* Action Buttons */}
-            <div style={{
-              display: 'flex',
-              gap: '1rem',
-              justifyContent: 'flex-end'
-            }}>
-              <button
-                onClick={() => {
-                  setApiConfig(loadApiConfig())
-                  setShowApiConfig(false)
-                }}
-                style={{
-                  padding: '0.75rem 1.5rem',
-                  backgroundColor: '#333',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: '0.5rem',
-                  cursor: 'pointer',
-                  fontSize: '0.95rem',
-                  transition: 'all 0.3s ease'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = '#444'
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = '#333'
-                }}
-              >
-                取消
-              </button>
-              <button
-                onClick={() => {
-                  saveApiConfig(apiConfig)
-                  setShowApiConfig(false)
-                  alert('配置已保存！')
-                }}
-                style={{
-                  padding: '0.75rem 1.5rem',
-                  background: 'linear-gradient(135deg, #10b981, #059669)',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: '0.5rem',
-                  cursor: 'pointer',
-                  fontSize: '0.95rem',
-                  fontWeight: 'bold',
-                  transition: 'all 0.3s ease'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-2px)'
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'translateY(0)'
-                }}
-              >
-                保存配置
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

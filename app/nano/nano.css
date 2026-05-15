@@ -1,4 +1,5 @@
 /* Custom styles for YuanTu Engine interface */
+@import './error-modal.css';
 
 /* Global smooth transitions */
 * {

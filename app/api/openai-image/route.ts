@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import {
   createApiErrorResponse,
   detectApiErrorCode,
-  detectApiErrorCodeFromException
+  detectApiErrorCodeFromException,
+  extractApiErrorDetail
 } from '@/app/lib/api-error'
 import {
   buildGrsaiImageRequest,
@@ -47,7 +48,7 @@ async function openAiImageHandler(request: NextRequest) {
 
     if (!apiKey) {
       return NextResponse.json(
-        { error: 'OpenAI API 配置缺失，请在页面右上角配置 API 密钥' },
+        { error: 'OpenAI API 配置缺失，请先配置 API 密钥' },
         { status: 500 }
       )
     }
@@ -68,7 +69,11 @@ async function openAiImageHandler(request: NextRequest) {
     if (!response.ok) {
       console.error('OpenAI 图片接口错误:', payload)
       return NextResponse.json(
-        createApiErrorResponse(detectApiErrorCode(payload, response.status), response.status),
+        createApiErrorResponse(
+          detectApiErrorCode(payload, response.status),
+          response.status,
+          extractApiErrorDetail(payload)
+        ),
         { status: response.status }
       )
     }

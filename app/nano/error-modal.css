@@ -1,0 +1,84 @@
+.error-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(1rem, 3vw, 2rem);
+  background:
+    radial-gradient(circle at 30% 18%, rgba(37, 99, 235, 0.20), transparent 32%),
+    radial-gradient(circle at 78% 18%, rgba(6, 182, 212, 0.16), transparent 30%),
+    rgba(15, 23, 42, 0.52);
+  backdrop-filter: blur(16px);
+}
+
+.error-modal-panel {
+  width: min(520px, 100%);
+  padding: clamp(1.25rem, 3vw, 2rem);
+  border: 1px solid rgba(37, 99, 235, 0.18);
+  border-radius: 28px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 251, 255, 0.94)),
+    linear-gradient(135deg, rgba(37, 99, 235, 0.08), rgba(6, 182, 212, 0.07));
+  box-shadow: 0 30px 90px rgba(15, 23, 42, 0.26);
+  color: #0f172a;
+  text-align: center;
+}
+
+.error-modal-mark {
+  display: grid;
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 1rem;
+  place-items: center;
+  border: 1px solid rgba(37, 99, 235, 0.18);
+  border-radius: 22px;
+  background: linear-gradient(135deg, rgba(239, 246, 255, 0.96), rgba(236, 254, 255, 0.90));
+  color: #1d4ed8;
+  font-size: 2rem;
+  font-weight: 900;
+  line-height: 1;
+  box-shadow: 0 16px 34px rgba(37, 99, 235, 0.14);
+}
+
+.error-modal-title {
+  margin: 0;
+  color: #0f172a;
+  font-size: clamp(1.35rem, 4vw, 1.9rem);
+  font-weight: 820;
+  line-height: 1.15;
+}
+
+.error-modal-message {
+  margin: 0.8rem auto 0;
+  max-width: 420px;
+  color: #475569;
+  font-size: 1rem;
+  line-height: 1.65;
+}
+
+.error-modal-actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 1.4rem;
+}
+
+.error-modal-primary {
+  min-width: 128px;
+  min-height: 48px;
+  padding: 0.78rem 1.4rem;
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #2563eb 0%, #7c3aed 52%, #06b6d4 100%);
+  color: #ffffff;
+  cursor: pointer;
+  font-size: 0.98rem;
+  font-weight: 800;
+  box-shadow: 0 16px 34px rgba(37, 99, 235, 0.26);
+}
+
+.error-modal-primary:focus-visible {
+  outline: 3px solid rgba(37, 99, 235, 0.28);
+  outline-offset: 3px;
+}
