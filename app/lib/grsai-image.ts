@@ -38,6 +38,12 @@ export type ParsedGrsaiImageResponse = {
   text?: string
 }
 
+export type GrsaiTimingMeta = {
+  pollAttempt?: number
+  requestId: string
+  startedAt: number
+}
+
 const GRS_AI_GENERATE_PATH = '/v1/api/generate'
 const GRS_AI_RESULT_PATH = '/v1/api/result'
 const DEFAULT_NANO_ASPECT_RATIO = '1:1'
@@ -154,6 +160,37 @@ export function parseGrsaiImageResponse(payload: unknown): ParsedGrsaiImageRespo
  */
 export function getGrsaiResponseStatus(result: ParsedGrsaiImageResponse): number {
   return result.taskId && !result.imageUrl ? 202 : 200
+}
+
+/**
+ * 创建 Grsai 计时请求 ID
+ * @returns 可用于日志串联的请求 ID
+ */
+export function createGrsaiRequestId(): string {
+  return `grsai-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`
+}
+
+/**
+ * 记录 Grsai 生成链路耗时
+ * @param stage 当前阶段名称
+ * @param meta 请求计时元数据
+ * @param fields 附加日志字段
+ * @returns 无返回值
+ */
+export function logGrsaiTiming(
+  stage: string,
+  meta: GrsaiTimingMeta,
+  fields: Record<string, unknown> = {}
+): void {
+  const now = Date.now()
+  console.log('[grsai-timing]', {
+    ...fields,
+    elapsedMs: now - meta.startedAt,
+    pollAttempt: meta.pollAttempt,
+    requestId: meta.requestId,
+    stage,
+    timestamp: new Date(now).toISOString()
+  })
 }
 
 /**

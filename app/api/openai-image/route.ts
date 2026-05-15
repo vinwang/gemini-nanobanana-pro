@@ -3,7 +3,8 @@ import {
   createApiErrorResponse,
   detectApiErrorCode,
   detectApiErrorCodeFromException,
-  extractApiErrorDetail
+  extractApiErrorDetail,
+  readApiResponsePayload
 } from '@/app/lib/api-error'
 import {
   buildGrsaiImageRequest,
@@ -65,7 +66,7 @@ async function openAiImageHandler(request: NextRequest) {
       body: upstreamRequest.body
     })
 
-    const payload = await readResponsePayload(response)
+    const payload = await readApiResponsePayload(response)
     if (!response.ok) {
       console.error('OpenAI 图片接口错误:', payload)
       return NextResponse.json(
@@ -215,24 +216,6 @@ function buildImageBlob(imageData: string): Blob {
   const normalized = imageData.includes(',') ? imageData.split(',')[1] : imageData
   const buffer = Buffer.from(normalized, 'base64')
   return new Blob([buffer], { type: 'image/png' })
-}
-
-/**
- * 读取上游响应内容，优先解析 JSON
- * @param response 上游 HTTP 响应
- * @returns 解析后的 JSON 或原始文本
- */
-async function readResponsePayload(response: Response): Promise<unknown> {
-  const rawText = await response.text()
-  if (!rawText) {
-    return {}
-  }
-
-  try {
-    return JSON.parse(rawText)
-  } catch {
-    return { raw: rawText }
-  }
 }
 
 /**

@@ -3,12 +3,18 @@ import {
   createApiErrorResponse,
   detectApiErrorCode,
   detectApiErrorCodeFromException,
-  extractApiErrorDetail
+  extractApiErrorDetail,
+  readApiResponsePayload
 } from '@/app/lib/api-error'
 import { getMaynorApiConfig } from '@/app/lib/maynor-api'
 
 export const runtime = 'nodejs'
 export const maxDuration = 60
+
+type DoubaoImagePayload = {
+  data?: Array<{ url?: string }>
+  usage?: unknown
+}
 
 /**
  * 处理 Doubao 图片生成请求
@@ -112,11 +118,9 @@ async function doubaoHandler(request: NextRequest) {
     // 检查最终响应
     if (!response || !response.ok) {
       let errorData: any = {}
-      try {
-        if (response) {
-          errorData = await response.json()
-        }
-      } catch (e) {
+      if (response) {
+        errorData = await readApiResponsePayload(response)
+      } else {
         errorData = { error: { message: lastError?.message || '网络请求失败' } }
       }
       
@@ -132,7 +136,7 @@ async function doubaoHandler(request: NextRequest) {
       )
     }
 
-    const data = await response.json()
+    const data = await readApiResponsePayload(response) as DoubaoImagePayload
     console.log('Doubao API响应:', data)
     
     // 解析 doubao 响应格式

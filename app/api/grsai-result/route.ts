@@ -3,11 +3,14 @@ import {
   createApiErrorResponse,
   detectApiErrorCode,
   detectApiErrorCodeFromException,
-  extractApiErrorDetail
+  extractApiErrorDetail,
+  readApiResponsePayload
 } from '@/app/lib/api-error'
 import {
   buildGrsaiResultRequest,
+  createGrsaiRequestId,
   getGrsaiResponseStatus,
+  logGrsaiTiming,
   parseGrsaiImageResponse
 } from '@/app/lib/grsai-image'
 import { getMaynorApiConfig } from '@/app/lib/maynor-api'
@@ -18,6 +21,9 @@ export const maxDuration = 30
 type GrsaiResultRequestBody = {
   apiKey?: string
   apiUrl?: string
+  pollAttempt?: number
+  requestId?: string
+  startedAt?: number
   taskId?: string
 }
 
@@ -27,9 +33,16 @@ type GrsaiResultRequestBody = {
  * @returns 已完成图片结果或仍在处理中的任务状态
  */
 async function grsaiResultHandler(request: NextRequest) {
+  const routeStartedAt = Date.now()
+
   try {
     const body = (await request.json()) as GrsaiResultRequestBody
     const taskId = body.taskId?.trim()
+    const timingMeta = {
+      pollAttempt: body.pollAttempt,
+      requestId: body.requestId || createGrsaiRequestId(),
+      startedAt: typeof body.startedAt === 'number' ? body.startedAt : routeStartedAt
+    }
 
     if (!taskId) {
       return NextResponse.json({ error: '缺少生成任务 ID' }, { status: 400 })
@@ -44,11 +57,25 @@ async function grsaiResultHandler(request: NextRequest) {
     }
 
     const upstreamRequest = buildGrsaiResultRequest({ apiKey, apiUrl, taskId })
+    logGrsaiTiming('result:poll_start', timingMeta, {
+      apiUrl,
+      taskId,
+      url: upstreamRequest.url
+    })
+
+    const upstreamStartedAt = Date.now()
     const response = await fetch(upstreamRequest.url, {
       method: upstreamRequest.method,
       headers: upstreamRequest.headers
     })
-    const payload = await readJsonPayload(response)
+    const upstreamElapsedMs = Date.now() - upstreamStartedAt
+    const payload = await readApiResponsePayload(response)
+
+    logGrsaiTiming('result:poll_response', timingMeta, {
+      status: response.status,
+      taskId,
+      upstreamElapsedMs
+    })
 
     if (!response.ok) {
       return NextResponse.json(
@@ -62,30 +89,17 @@ async function grsaiResultHandler(request: NextRequest) {
     }
 
     const parsed = parseGrsaiImageResponse(payload)
+    logGrsaiTiming(parsed.imageUrl ? 'result:completed' : 'result:pending', timingMeta, {
+      status: parsed.status,
+      taskId: parsed.taskId || taskId
+    })
+
     return NextResponse.json(parsed, { status: getGrsaiResponseStatus(parsed) })
   } catch (error) {
     return NextResponse.json(
       createApiErrorResponse(detectApiErrorCodeFromException(error), 500),
       { status: 500 }
     )
-  }
-}
-
-/**
- * 读取上游 JSON 响应内容
- * @param response 上游 HTTP 响应
- * @returns JSON 对象或原始文本包装对象
- */
-async function readJsonPayload(response: Response): Promise<unknown> {
-  const rawText = await response.text()
-  if (!rawText) {
-    return {}
-  }
-
-  try {
-    return JSON.parse(rawText)
-  } catch {
-    return { raw: rawText }
   }
 }
 

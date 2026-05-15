@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react'
 import './nano.css'
 import BrowserWarning from '../components/BrowserWarning'
 import { useLanguage } from '../i18n/LanguageContext'
-import ShareModal from '../components/ShareModal'
 import QuotaModal from '../components/QuotaModal'
 
 type Mode = 'upload' | 'text'
@@ -19,6 +18,12 @@ type GenerationRequestData = {
 
 type GrsaiPendingTask = {
   taskId: string
+}
+
+type GrsaiTimingContext = {
+  pollAttempt: number
+  requestId: string
+  startedAt: number
 }
 
 export default function NanoPage() {
@@ -38,7 +43,6 @@ export default function NanoPage() {
   const [showErrorModal, setShowErrorModal] = useState(false)
   const [errorModalTitle, setErrorModalTitle] = useState('')
   const [errorModalMessage, setErrorModalMessage] = useState('')
-  const [showShareModal, setShowShareModal] = useState(false)
   const [showQuotaModal, setShowQuotaModal] = useState(false)
 
   const quickPrompts = [
@@ -317,21 +321,27 @@ export default function NanoPage() {
    */
   const pollGrsaiTask = async (
     taskId: string,
-    requestData: GenerationRequestData
+    requestData: GenerationRequestData,
+    timingContext: GrsaiTimingContext
   ): Promise<unknown> => {
     while (true) {
       await wait(GRS_AI_POLL_INTERVAL_MS)
+      const nextAttempt = timingContext.pollAttempt + 1
 
       const response = await fetch('/api/grsai-result', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          taskId,
           apiKey: requestData.apiKey,
-          apiUrl: requestData.apiUrl
+          apiUrl: requestData.apiUrl,
+          pollAttempt: nextAttempt,
+          requestId: timingContext.requestId,
+          startedAt: timingContext.startedAt,
+          taskId
         })
       })
       const data = await response.json()
+      timingContext.pollAttempt = nextAttempt
 
       if (isPendingGrsaiTask(data)) {
         continue
@@ -432,7 +442,11 @@ export default function NanoPage() {
       }
 
       if (isPendingGrsaiTask(data)) {
-        const finalData = await pollGrsaiTask(data.taskId, requestData)
+        const finalData = await pollGrsaiTask(data.taskId, requestData, {
+          pollAttempt: 0,
+          requestId: `client-${requestData.timestamp}`,
+          startedAt: requestData.timestamp as number
+        })
         setResult(finalData)
         return
       }
@@ -507,49 +521,6 @@ export default function NanoPage() {
       default:
         return model
     }
-  }
-
-  // 下载图片
-  const downloadImage = (imageData: string, mimeType: string = 'image/png') => {
-    const link = document.createElement('a')
-    link.href = `data:${mimeType};base64,${imageData}`
-    link.download = `generated-${Date.now()}.${mimeType.split('/')[1]}`
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-  }
-
-  // 分享图片
-  const shareImage = async (imageData: string, mimeType: string = 'image/png') => {
-    if (navigator.share && navigator.canShare) {
-      try {
-        const blob = await (await fetch(`data:${mimeType};base64,${imageData}`)).blob()
-        const file = new File([blob], `generated-${Date.now()}.${mimeType.split('/')[1]}`, { type: mimeType })
-        
-        if (navigator.canShare({ files: [file] })) {
-          await navigator.share({
-            files: [file],
-            title: 'AI生成的图片',
-            text: '查看这张AI生成的图片'
-          })
-        }
-      } catch (error) {
-        console.error('分享失败:', error)
-        // 降级到复制链接
-        copyToClipboard(`data:${mimeType};base64,${imageData}`)
-      }
-    } else {
-      // 降级到复制链接
-      copyToClipboard(`data:${mimeType};base64,${imageData}`)
-    }
-  }
-
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text).then(() => {
-      showError('提示', '图片链接已复制到剪贴板')
-    }).catch(() => {
-      showError('提示', '复制失败，请手动复制')
-    })
   }
 
   const resultSummaryText = result?.text || result?.content || result?.message || ''
@@ -1724,13 +1695,11 @@ export default function NanoPage() {
           {result.imageData || result.imageUrl ? (
             <div style={{
               display: 'grid',
-              gridTemplateColumns: 'minmax(0, 1fr) 240px',
-              gap: '1.2rem',
-              alignItems: 'start'
+              gap: '1rem',
+              justifyItems: 'center'
             }}>
               <div style={{ textAlign: 'center' }}>
                 <img
-                  id="generated-image"
                   className="result-image"
                   src={result.imageUrl || `data:${result.mimeType};base64,${result.imageData}`}
                   alt="Generated"
@@ -1751,114 +1720,17 @@ export default function NanoPage() {
                   }}
                 />
               </div>
-              <div style={{
-                background: 'rgba(255,255,255,0.03)',
-                border: '1px solid rgba(255,255,255,0.07)',
-                borderRadius: '1.2rem',
-                padding: '1rem',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '0.85rem'
-              }}>
+              {resultSummaryText && (
                 <div style={{
-                  display: 'grid',
-                  gap: '0.75rem'
+                  maxWidth: '760px',
+                  fontSize: '0.92rem',
+                  lineHeight: '1.7',
+                  color: '#475569',
+                  textAlign: 'center'
                 }}>
-                  <button
-                  onClick={() => {
-                    const img = document.getElementById('generated-image') as HTMLImageElement
-                    if (img) {
-                      const canvas = document.createElement('canvas')
-                      const ctx = canvas.getContext('2d')
-                      canvas.width = img.naturalWidth
-                      canvas.height = img.naturalHeight
-                      ctx?.drawImage(img, 0, 0)
-
-                      canvas.toBlob((blob) => {
-                        if (blob) {
-                          const url = URL.createObjectURL(blob)
-                          const a = document.createElement('a')
-                          a.href = url
-                          a.download = `yuantu-engine-${Date.now()}.png`
-                          document.body.appendChild(a)
-                          a.click()
-                          document.body.removeChild(a)
-                          URL.revokeObjectURL(url)
-                        }
-                      }, 'image/png')
-                    }
-                  }}
-                    style={{
-                      padding: '0.9rem 1rem',
-                      background: 'linear-gradient(135deg, #10b981, #059669)',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '0.95rem',
-                      cursor: 'pointer',
-                      fontSize: '0.95rem',
-                      fontWeight: '500',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                    boxShadow: '0 4px 15px rgba(16, 185, 129, 0.3)',
-                    transition: 'all 0.3s ease'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = 'translateY(-2px)'
-                    e.currentTarget.style.boxShadow = '0 6px 20px rgba(16, 185, 129, 0.4)'
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'none'
-                    e.currentTarget.style.boxShadow = '0 4px 15px rgba(16, 185, 129, 0.3)'
-                  }}
-                >
-                  {t.result.download}
-                </button>
-                <button
-                  onClick={() => {
-                    // 打开分享弹窗
-                    setShowShareModal(true)
-                  }}
-                    style={{
-                      padding: '0.9rem 1rem',
-                      background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '0.95rem',
-                      cursor: 'pointer',
-                      fontSize: '0.95rem',
-                      fontWeight: '500',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                    boxShadow: '0 4px 15px rgba(59, 130, 246, 0.3)',
-                    transition: 'all 0.3s ease'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = 'translateY(-2px)'
-                    e.currentTarget.style.boxShadow = '0 6px 20px rgba(59, 130, 246, 0.4)'
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'none'
-                    e.currentTarget.style.boxShadow = '0 4px 15px rgba(59, 130, 246, 0.3)'
-                  }}
-                >
-                  {t.result.share}
-                </button>
+                  {resultSummaryText}
                 </div>
-                {resultSummaryText && (
-                  <div style={{
-                    marginTop: '0.25rem',
-                    paddingTop: '0.9rem',
-                    borderTop: '1px solid rgba(255,255,255,0.08)',
-                    fontSize: '0.84rem',
-                    lineHeight: '1.7',
-                    color: '#d1d5db'
-                  }}>
-                    {resultSummaryText}
-                  </div>
-                )}
-              </div>
+              )}
             </div>
           ) : resultSummaryText ? (
             /* 文本响应显示 */
@@ -1985,17 +1857,6 @@ export default function NanoPage() {
             </div>
           </section>
         </div>
-      )}
-
-      {/* Share Modal */}
-      {result && result.imageData && (
-        <ShareModal
-          isOpen={showShareModal}
-          onClose={() => setShowShareModal(false)}
-          imageData={result.imageData}
-          mimeType={result.mimeType || 'image/png'}
-          t={t}
-        />
       )}
 
       {/* Quota Modal */}

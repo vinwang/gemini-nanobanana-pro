@@ -9,6 +9,8 @@ type UpstreamErrorShape = {
   raw?: string
 }
 
+const RAW_ERROR_PREVIEW_LIMIT = 500
+
 /**
  * 创建统一的 API 错误响应
  * @param code 错误分类代码
@@ -92,6 +94,24 @@ export function extractApiErrorDetail(payload: unknown): string | undefined {
   ].filter((part): part is string => typeof part === 'string' && part.length > 0)
 
   return parts.length > 0 ? parts.join(' | ') : undefined
+}
+
+/**
+ * 读取 API 响应内容，JSON 解析失败时保留原始文本摘要
+ * @param response fetch 返回的响应对象
+ * @returns JSON 对象或 raw 文本包装对象
+ */
+export async function readApiResponsePayload(response: Response): Promise<unknown> {
+  const rawText = await response.text()
+  if (!rawText) {
+    return {}
+  }
+
+  try {
+    return JSON.parse(rawText)
+  } catch {
+    return { raw: rawText.slice(0, RAW_ERROR_PREVIEW_LIMIT) }
+  }
 }
 
 /**

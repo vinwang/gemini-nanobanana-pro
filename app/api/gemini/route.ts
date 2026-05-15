@@ -3,11 +3,14 @@ import {
   createApiErrorResponse,
   detectApiErrorCode,
   detectApiErrorCodeFromException,
-  extractApiErrorDetail
+  extractApiErrorDetail,
+  readApiResponsePayload
 } from '@/app/lib/api-error'
 import {
   buildGrsaiImageRequest,
+  createGrsaiRequestId,
   getGrsaiResponseStatus,
+  logGrsaiTiming,
   parseGrsaiImageResponse,
   shouldUseGrsaiImageProtocol
 } from '@/app/lib/grsai-image'
@@ -20,12 +23,44 @@ import { resolveProviderModel } from '@/app/lib/model-map'
 export const runtime = 'nodejs'
 export const maxDuration = 60
 
+type GeminiNativePart = {
+  inlineData?: { data?: string; mimeType?: string }
+  inline_data?: { data?: string; mime_type?: string }
+  text?: string
+}
+
+type GeminiNativePayload = {
+  candidates?: Array<{
+    content?: {
+      parts?: GeminiNativePart[]
+    }
+  }>
+}
+
+type ChatCompletionPayload = {
+  choices?: Array<{
+    message?: {
+      content?: Array<{ image_url?: { url?: string }; text?: string; type?: string }> | string
+    }
+  }>
+}
+
+type GeminiResponsePayload = ChatCompletionPayload & GeminiNativePayload
+
+type NormalizedInlineImage = {
+  data: string
+  mimeType: string
+}
+
 /**
  * 处理 Gemini / 第三方 MAYNOR 网关图片请求
  * @param request Next.js 请求对象
  * @returns 统一格式的图片生成结果
  */
 async function geminiHandler(request: NextRequest) {
+  const requestId = createGrsaiRequestId()
+  const startedAt = Date.now()
+
   try {
     const { prompt, imageData, imageDataArray, apiKey: customApiKey, apiUrl: customApiUrl, model: customModel, size } = await request.json()
 
@@ -111,10 +146,27 @@ async function geminiHandler(request: NextRequest) {
         size
       })
 
+      logGrsaiTiming('gemini:upstream_request_start', { requestId, startedAt }, {
+        apiUrl,
+        hasImageInput,
+        imageCount: normalizeGrsaiImages(imageData, imageDataArray).length,
+        model,
+        payloadBytes: upstreamRequest.body.length,
+        size,
+        url: upstreamRequest.url
+      })
+
+      const upstreamStartedAt = Date.now()
       response = await fetch(upstreamRequest.url, {
         method: upstreamRequest.method,
         headers: upstreamRequest.headers,
         body: upstreamRequest.body
+      })
+      const upstreamElapsedMs = Date.now() - upstreamStartedAt
+
+      logGrsaiTiming('gemini:upstream_response', { requestId, startedAt }, {
+        status: response.status,
+        upstreamElapsedMs
       })
     } else if (!useStandardProtocol) {
       const upstreamUrl = `${apiUrl}/v1beta/models/${model}:generateContent`
@@ -161,23 +213,36 @@ async function geminiHandler(request: NextRequest) {
       })
     }
 
+    const payload = await readApiResponsePayload(response)
+
     if (!response.ok) {
-      const errorData = await response.json()
-      console.error('API错误:', errorData)
+      logGrsaiTiming('gemini:upstream_error', { requestId, startedAt }, {
+        detail: extractApiErrorDetail(payload),
+        status: response.status
+      })
+      console.error('API错误:', payload)
       return NextResponse.json(
         createApiErrorResponse(
-          detectApiErrorCode(errorData, response.status),
+          detectApiErrorCode(payload, response.status),
           response.status,
-          extractApiErrorDetail(errorData)
+          extractApiErrorDetail(payload)
         ),
         { status: response.status }
       )
     }
 
-    const data = await response.json()
+    const data = payload as GeminiResponsePayload
 
     if (shouldUseGrsaiImageProtocol(apiUrl)) {
       const parsed = parseGrsaiImageResponse(data)
+      logGrsaiTiming(
+        parsed.taskId && !parsed.imageUrl ? 'gemini:task_created' : 'gemini:completed',
+        { requestId, startedAt },
+        {
+          status: parsed.status,
+          taskId: parsed.taskId
+        }
+      )
       return NextResponse.json(parsed, { status: getGrsaiResponseStatus(parsed) })
     }
     
@@ -188,14 +253,18 @@ async function geminiHandler(request: NextRequest) {
         const content = data.candidates[0].content
         
         if (content.parts) {
-          const imagePart = content.parts.find((part: any) => part.inlineData || part.inline_data)
+          const imagePart = content.parts.find((part) => part.inlineData || part.inline_data)
           const textPart = content.parts.find((part: any) => part.text)
           
           if (imagePart) {
-            const imageData = imagePart.inlineData || imagePart.inline_data
+            const imageData = normalizeInlineImage(imagePart)
+            if (!imageData) {
+              return NextResponse.json(createApiErrorResponse('UNAVAILABLE', 500), { status: 500 })
+            }
+
             return NextResponse.json({ 
               imageData: imageData.data,
-              mimeType: imageData.mimeType || imageData.mime_type || 'image/png',
+              mimeType: imageData.mimeType,
               text: textPart?.text || '图片编辑已完成',
               success: true
             })
@@ -256,6 +325,26 @@ async function geminiHandler(request: NextRequest) {
       createApiErrorResponse(detectApiErrorCodeFromException(error), 500),
       { status: 500 }
     )
+  }
+}
+
+/**
+ * 统一读取 Gemini 原生响应中的图片数据
+ * @param part Gemini 原生 parts 中的一项
+ * @returns 标准化后的图片数据
+ */
+function normalizeInlineImage(part: GeminiNativePart): NormalizedInlineImage | undefined {
+  const inlineImage = part.inlineData
+    ? { data: part.inlineData.data, mimeType: part.inlineData.mimeType }
+    : { data: part.inline_data?.data, mimeType: part.inline_data?.mime_type }
+
+  if (!inlineImage.data) {
+    return undefined
+  }
+
+  return {
+    data: inlineImage.data,
+    mimeType: inlineImage.mimeType || 'image/png'
   }
 }
 

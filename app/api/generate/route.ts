@@ -3,11 +3,14 @@ import {
   createApiErrorResponse,
   detectApiErrorCode,
   detectApiErrorCodeFromException,
-  extractApiErrorDetail
+  extractApiErrorDetail,
+  readApiResponsePayload
 } from '@/app/lib/api-error'
 import {
   buildGrsaiImageRequest,
+  createGrsaiRequestId,
   getGrsaiResponseStatus,
+  logGrsaiTiming,
   parseGrsaiImageResponse,
   shouldUseGrsaiImageProtocol
 } from '@/app/lib/grsai-image'
@@ -17,12 +20,23 @@ import { resolveProviderModel } from '@/app/lib/model-map'
 export const runtime = 'nodejs'
 export const maxDuration = 60
 
+type ChatCompletionPayload = {
+  choices?: Array<{
+    message?: {
+      content?: Array<{ image_url?: { url?: string }; text?: string; type?: string }> | string
+    }
+  }>
+}
+
 /**
  * 处理 Gemini 文生图生成请求
  * @param request Next.js 请求对象
  * @returns 统一格式的文生图结果
  */
 async function generateHandler(request: NextRequest) {
+  const requestId = createGrsaiRequestId()
+  const startedAt = Date.now()
+
   try {
     const { prompt, apiKey: customApiKey, apiUrl: customApiUrl, model: customModel, size } = await request.json()
 
@@ -43,29 +57,57 @@ async function generateHandler(request: NextRequest) {
       ? buildGrsaiImageRequest({ apiKey, apiUrl, model, prompt, size })
       : buildChatCompletionsRequest(apiUrl, apiKey, model, prompt)
 
+    logGrsaiTiming('generate:upstream_request_start', { requestId, startedAt }, {
+      apiUrl,
+      model,
+      payloadBytes: upstreamRequest.body.length,
+      size,
+      url: upstreamRequest.url
+    })
+
+    const upstreamStartedAt = Date.now()
     const response = await fetch(upstreamRequest.url, {
       method: upstreamRequest.method,
       headers: upstreamRequest.headers,
       body: upstreamRequest.body
     })
+    const upstreamElapsedMs = Date.now() - upstreamStartedAt
+
+    logGrsaiTiming('generate:upstream_response', { requestId, startedAt }, {
+      status: response.status,
+      upstreamElapsedMs
+    })
+
+    const payload = await readApiResponsePayload(response)
 
     if (!response.ok) {
-      const errorData = await response.json()
-      console.error('API错误:', errorData)
+      logGrsaiTiming('generate:upstream_error', { requestId, startedAt }, {
+        detail: extractApiErrorDetail(payload),
+        status: response.status
+      })
+      console.error('API错误:', payload)
       return NextResponse.json(
         createApiErrorResponse(
-          detectApiErrorCode(errorData, response.status),
+          detectApiErrorCode(payload, response.status),
           response.status,
-          extractApiErrorDetail(errorData)
+          extractApiErrorDetail(payload)
         ),
         { status: response.status }
       )
     }
 
-    const data = await response.json()
+    const data = payload as ChatCompletionPayload
 
     if (shouldUseGrsaiImageProtocol(apiUrl)) {
       const parsed = parseGrsaiImageResponse(data)
+      logGrsaiTiming(
+        parsed.taskId && !parsed.imageUrl ? 'generate:task_created' : 'generate:completed',
+        { requestId, startedAt },
+        {
+          status: parsed.status,
+          taskId: parsed.taskId
+        }
+      )
       return NextResponse.json(parsed, { status: getGrsaiResponseStatus(parsed) })
     }
     
